@@ -4,9 +4,12 @@ import main.model.enums.ModerationStatus;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.Data;
+
+@Data
 @Entity
 @Table(name = "posts")
 public class Post
@@ -32,7 +35,7 @@ public class Post
     private User user;
 
     @NotNull
-    private Date time;
+    private LocalDateTime time;
 
     @NotNull
     private String title;
@@ -50,83 +53,6 @@ public class Post
             inverseJoinColumns = {@JoinColumn(name = "tag_id")})
     private List<Tag> postTags;
 
-    public List<Tag> getPostTags() {
-        return postTags;
-    }
-
-    public void setPostTags(List<Tag> postTags) {
-        this.postTags = postTags;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public byte getIsActive() {
-        return isActive;
-    }
-
-    public ModerationStatus getModerationStatus() {
-        return moderationStatus;
-    }
-
-    public int getModeratorId() {
-        return moderatorId;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public int getViewCount() {
-        return viewCount;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setIsActive(byte isActive) {
-        this.isActive = isActive;
-    }
-
-    public void setModerationStatus(ModerationStatus moderationStatus) {
-        this.moderationStatus = moderationStatus;
-    }
-
-    public void setModeratorId(int moderatorId) {
-        this.moderatorId = moderatorId;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public void setViewCount(int viewCount) {
-        this.viewCount = viewCount;
-    }
+    @OneToMany(mappedBy = "post")
+    private List<PostVote> postVote;
 }
