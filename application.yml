@@ -1,7 +1,7 @@
 spring.datasource.url: jdbc:${DATABASE_URL:postgresql://localhost:5432/blog}
 spring.datasource.username: postgres
 spring.datasource.password: pass
-spring.jpa.hibernate.ddl-auto: create
+spring.jpa.hibernate.ddl-auto: none
 
 
 

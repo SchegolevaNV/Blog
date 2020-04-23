@@ -33,5 +33,7 @@ public class User {
     private String password;
 
     private String code;
-    private String text;
+
+    @Column(columnDefinition = "TEXT")
+    private String photo;
 }

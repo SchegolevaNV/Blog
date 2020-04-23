@@ -1,5 +1,7 @@
 package main.model;
 
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import main.model.enums.ModerationStatus;
 
 import javax.persistence.*;
@@ -10,6 +12,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "posts")
 public class Post
@@ -34,13 +37,14 @@ public class Post
     @ManyToOne(cascade = CascadeType.ALL)
     private User user;
 
-    @NotNull
+    @NonNull
     private LocalDateTime time;
 
     @NotNull
     private String title;
 
     @NotNull
+    @Column(columnDefinition = "TEXT")
     private String text;
 
     @NotNull
@@ -55,4 +59,27 @@ public class Post
 
     @OneToMany(mappedBy = "post")
     private List<PostVote> postVote;
+
+    @OneToMany(mappedBy = "post")
+    private List<PostComment> postComments;
+
+    public int getCommentsCount()
+    {
+        return getPostComments().size();
+    }
+
+    public int getVotesCount(String value)
+    {
+        List<PostVote> postVotes = getPostVote();
+
+        int likeCounts = 0;
+        int dislikeCount = 0;
+        for (PostVote postVote : postVotes)
+        {
+            if (postVote.getValue() == 1)
+                likeCounts++;
+            else dislikeCount++;
+        }
+        return (value.equals("likes")) ? likeCounts : dislikeCount;
+    }
 }

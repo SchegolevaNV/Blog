@@ -16,6 +16,7 @@
                 <configuration>
                     <source>11</source>
                     <target>11</target>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
 
@@ -86,6 +87,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>2.3.7</version>
         </dependency>
 
     </dependencies>

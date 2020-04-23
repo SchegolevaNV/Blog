@@ -1,4 +1,4 @@
-package repositories;
+package main.repositories;
 
 import main.model.Post;
 import org.springframework.data.repository.CrudRepository;
