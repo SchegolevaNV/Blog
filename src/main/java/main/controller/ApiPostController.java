@@ -15,7 +15,6 @@ public class ApiPostController
     @Autowired
     private PostService postService;
 
-
     @GetMapping("/api/post")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
