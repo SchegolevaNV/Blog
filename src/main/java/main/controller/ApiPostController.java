@@ -2,74 +2,72 @@ package main.controller;
 
 
 import main.api.responses.PostResponseBody;
+import main.api.responses.PostWallResponseBody;
+import main.model.Post;
+import main.repositories.PostRepository;
 import main.services.interfaces.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @ComponentScan("services")
+@RequestMapping("/api/post")
 public class ApiPostController
 {
     @Autowired
     private PostService postService;
 
-    @GetMapping("/api/post")
+    @Autowired
+    PostRepository postRepository;
+
+    @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public PostResponseBody getPosts (int offset, int limit, String mode)
+    public PostWallResponseBody getPosts (int offset, int limit, String mode)
     {
         return postService.getAllPosts(offset, limit, mode);
     }
 
-//    @GetMapping(value = "/api/post/search", params = {"offset", "limit", "query"})
-//    public ResponseEntity searchPosts (HttpServletRequest request,
-//                                   @RequestParam(value = "offset") int offset,
-//                                   @RequestParam(value = "limit") int limit,
-//                                   @RequestParam(value = "query") String mode)
-//    {
-//        //return personWallPostService.getPersonsWallPostsByUserId(request.getSession(), id, offset, itemPerPage);
-//        return null;
-//    }
-//
-//    @GetMapping("/api/post/{id}")
-//    public ResponseEntity getPost (HttpServletRequest request,
-//                                      @PathVariable("id") int id)
-//    {
-//        //return personWallPostService.getPersonsWallPostsByUserId(request.getSession(), id, offset, itemPerPage);
-//        return null;
-//    }
-//
-//    @GetMapping(value = "/api/post/byDate", params = {"offset", "limit", "date"})
-//    public ResponseEntity getPostsByDate (HttpServletRequest request,
-//                                      @RequestParam(value = "offset") int offset,
-//                                      @RequestParam(value = "limit") int limit,
-//                                      @RequestParam(value = "date") LocalDate date)
-//    {
-//        //return personWallPostService.getPersonsWallPostsByUserId(request.getSession(), id, offset, itemPerPage);
-//        return null;
-//    }
-//
-//    @GetMapping(value = "/api/post/byTag", params = {"offset", "limit", "tag"})
-//    public ResponseEntity getPostsByTag (HttpServletRequest request,
-//                                         @RequestParam(value = "offset") int offset,
-//                                         @RequestParam(value = "limit") int limit,
-//                                         @RequestParam(value = "tag") String  tag)
-//    {
-//        //return personWallPostService.getPersonsWallPostsByUserId(request.getSession(), id, offset, itemPerPage);
-//        return null;
-//    }
-//
-//    @GetMapping(value = "/api/post/moderation", params = {"offset", "limit", "status"})
-//    public ResponseEntity getPostsModerationStatus (HttpServletRequest request,
-//                                        @RequestParam(value = "offset") int offset,
-//                                        @RequestParam(value = "limit") int limit,
-//                                        @RequestParam(value = "status") String  status)
-//    {
-//        //return personWallPostService.getPersonsWallPostsByUserId(request.getSession(), id, offset, itemPerPage);
-//        return null;
-//    }
+    @GetMapping("search")
+    public PostWallResponseBody searchPosts (int offset, int limit, String query)
+    {
+        return postService.searchPosts(offset, limit, query);
+    }
+
+    @GetMapping("byDate")
+    public PostWallResponseBody getPostsByDate (int offset, int limit, String date)
+    {
+        return postService.searchPosts(offset, limit, date);
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<PostResponseBody> getPost (@PathVariable("id") int id)
+    {
+        Optional<Post> optionalPost = postRepository.findById(id);
+        if (optionalPost.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return new ResponseEntity<PostResponseBody> (postService.getPostByID(optionalPost.get()), HttpStatus.OK);
+    }
+
+    @GetMapping(value = "byTag")
+    public PostWallResponseBody getPostsByTag (int offset, int limit, String  tag)
+    {
+        return postService.searchPosts(offset, limit, tag);
+    }
+
+    @GetMapping(value = "moderation")
+    public ResponseEntity getPostsModerationStatus (int offset, int limit, String  status)
+    {
+        return null;
+    }
+
 //
 //    @GetMapping(value = "/api/post/my", params = {"offset", "limit", "status"})
 //    public ResponseEntity getMyPosts (HttpServletRequest request,

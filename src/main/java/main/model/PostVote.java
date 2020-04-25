@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.sql.Blob;
 import java.time.LocalDateTime;
 
 @Data
@@ -27,5 +28,5 @@ public class PostVote
     private LocalDateTime time;
 
     @NotNull
-    private byte value;
+    private int value;
 }

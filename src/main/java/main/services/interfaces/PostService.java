@@ -1,8 +1,10 @@
 package main.services.interfaces;
 
 import main.api.responses.PostResponseBody;
+import main.api.responses.PostWallResponseBody;
 import main.model.Post;
 import main.model.enums.ModeValue;
+
 import main.model.enums.ModerationStatus;
 import main.repositories.PostRepository;
 import main.services.bodies.PostBody;
@@ -14,38 +16,20 @@ import main.services.comparators.LikePostComparator;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public interface PostService
 {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, EEEE, HH:mm");
 
-    PostResponseBody getAllPosts(int offset, int limit, String mode);
-    PostResponseBody searchPosts(int offset, int limit, String query);
+    PostWallResponseBody getAllPosts(int offset, int limit, String mode);
+    PostWallResponseBody searchPosts(int offset, int limit, String query);
+    PostWallResponseBody getPostsByDate(int offset, int limit, String date);
+    PostResponseBody getPostByID(Post post);
+    PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
+    PostWallResponseBody getPostsForModeration(int offset, int limit, String status);
 
     /** default methods*/
-
-    default HashMap<List<Post>, Integer> getPostListAndCount (PostRepository postRepository)
-    {
-        HashMap<List<Post>, Integer> listIntegerHashMap = new HashMap<>();
-        int count = 0;
-
-        Iterable<Post> postIterable = postRepository.findAll();
-        List<Post> posts = new ArrayList<>();
-
-        for (Post post : postIterable) {
-            count++;
-
-            if (post.getIsActive() == 1 &&
-                    post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
-                    post.getTime().isBefore(LocalDateTime.now()))
-                posts.add(post);
-        }
-        listIntegerHashMap.put(posts, count);
-
-        return listIntegerHashMap;
-    }
 
     default List<Post> sortPosts(List<Post> posts, String mode)
     {
@@ -70,17 +54,12 @@ public interface PostService
         {
             Post post = posts.get(i);
             UserBody user = new UserBody(post.getUser().getId(), post.getUser().getName());
-            String announce = "";
-
-            if (post.getText().length() > 500) {
-                announce = post.getText().substring(0, 499) + "...";
-            }
 
             postBodies.add(PostBody.builder().id(post.getId())
                     .time(post.getTime().format(formatter))
                     .user(user)
                     .title(post.getTitle())
-                    .announce(announce)
+                    .announce(getAnnounce(post))
                     .likeCount(post.getVotesCount("likes"))
                     .dislikeCount(post.getVotesCount("dislikes"))
                     .commentCount(post.getCommentsCount())
@@ -88,5 +67,36 @@ public interface PostService
                     .build());
         }
         return postBodies;
+    }
+
+    default List<Post> getPostByDefault (PostRepository postRepository)
+    {
+        Iterable<Post> postIterable = postRepository.findAll();
+        List<Post> posts = new ArrayList<>();
+
+        for (Post post : postIterable) {
+
+            if (isPostAccepted(post))
+                posts.add(post);
+        }
+        return posts;
+    }
+
+    default String getAnnounce(Post post)
+    {
+        String announce = "";
+
+        if (post.getText().length() > 500) {
+            announce = post.getText().substring(0, 499) + "...";
+        } else announce = post.getText();
+
+        return announce;
+    }
+
+    default boolean isPostAccepted(Post post)
+    {
+        return post.getIsActive() == 1 &&
+                post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
+                post.getTime().isBefore(LocalDateTime.now());
     }
 }

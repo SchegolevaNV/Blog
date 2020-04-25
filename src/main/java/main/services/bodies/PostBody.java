@@ -1,12 +1,11 @@
 package main.services.bodies;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class PostBody
 {
     private int id;
