@@ -56,10 +56,10 @@ public class ApiPostController
         return new ResponseEntity<PostResponseBody> (postService.getPostByID(optionalPost.get()), HttpStatus.OK);
     }
 
-    @GetMapping(value = "byTag")
-    public PostWallResponseBody getPostsByTag (int offset, int limit, String  tag)
+    @GetMapping("byTag")
+    public PostWallResponseBody getPostsByTag (int offset, int limit, String tag)
     {
-        return postService.searchPosts(offset, limit, tag);
+        return postService.getPostsByTag(offset, limit, tag);
     }
 
     @GetMapping(value = "moderation")

@@ -19,9 +19,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-
-@Data
 @Service
+@Data
 public class PostServiceImpl implements PostService
 {
     @Autowired
@@ -144,7 +143,7 @@ public class PostServiceImpl implements PostService
                 List<Tag> tagList = post.getPostTags();
                 for (Tag tags : tagList)
                 {
-                    if (tags.getName().equals(tag))
+                    if (tags.getName().contains(tag))
                         posts.add(post);
                 }
             }
