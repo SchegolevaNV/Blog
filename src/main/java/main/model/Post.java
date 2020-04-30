@@ -27,11 +27,11 @@ public class Post
 
     @Enumerated(EnumType.STRING)
     @NotNull
-    @Column(name = "moderation_status", columnDefinition = "moderationStatus DEFAULT 'NEW'")
+    @Column(name = "moderation_status", columnDefinition = "moderation_status DEFAULT 'NEW'")
     private ModerationStatus moderationStatus;
 
     @Column(name = "moderator_id")
-    private int moderatorId;
+    private Integer moderatorId;
 
     @NotNull
     @ManyToOne(cascade = CascadeType.ALL)

@@ -1,0 +1,1 @@
+CREATE TYPE moderation_status AS ENUM ('NEW','ACCEPTED', 'DECLINED');

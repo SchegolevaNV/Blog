@@ -1,0 +1,498 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/db.changelog-insert-datas.yaml
+  - changeSet:
+      id: 1
+      author: myBase
+      changes:
+#добавление пользователей
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: is_moderator
+                  value: 0
+              - column:
+                  name: reg_time
+                  value: 2018-04-29 23:06:57.241
+              - column:
+                  name: name
+                  value: "Даниил"
+              - column:
+                  name: email
+                  value: "daniil@mail.ru"
+              - column:
+                  name: password
+                  value: "pass"
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: is_moderator
+                  value: 1
+              - column:
+                  name: reg_time
+                  value: 2018-04-29 23:05:55.241
+              - column:
+                  name: name
+                  value: "Михаил"
+              - column:
+                  name: email
+                  value: "michail@mail.ru"
+              - column:
+                  name: password
+                  value: "angel"
+
+#добавление постов
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-29 23:50:57.610
+              - column:
+                  name: title
+                  value: "Мой первый пост"
+              - column:
+                  name: text
+                  value: "Всем привет!"
+              - column:
+                  name: view_count
+                  value: 10
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 0
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 12:50:57.610
+              - column:
+                  name: title
+                  value: "Только для френдов"
+              - column:
+                  name: text
+                  value: "Ахтунг, народ. Приходите скорее, я тут совсем закисла"
+              - column:
+                  name: view_count
+                  value: 5
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: NEW
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 12:45:57.610
+              - column:
+                  name: title
+                  value: "Ну как вам сказать..."
+              - column:
+                  name: text
+                  value: "Что-то я сегодня расписалась, погода хорошая, птички, солнышко, весна... карантин"
+              - column:
+                  name: view_count
+                  value: 34
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2019-04-30 12:45:57.610
+              - column:
+                  name: title
+                  value: "Жизнь хороша"
+              - column:
+                  name: text
+                  value: "Сегодня сделали модератором блога. Юхууу! Теперь наворочу!"
+              - column:
+                  name: view_count
+                  value: 125
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-05-12 10:57.610
+              - column:
+                  name: title
+                  value: "Ну здравствуй работа!"
+              - column:
+                  name: text
+                  value: "Итак, карантин вроде всё, а то бы я скоро всё. Офис, привет :)"
+              - column:
+                  name: view_count
+                  value: 10
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 09:40:57.610
+              - column:
+                  name: title
+                  value: "Герой моего детства"
+              - column:
+                  name: text
+                  value: "Я всегда завидовала людям, которые помнят себя с самого раннего детства. Они могут чётко сказать: «Вот, когда мне было два, я делала то-то и то-то». И это очень круто в моих глазах.
+
+                          Мои воспоминания о детстве отрывочны. По сути я не всегда даже могу сказать, сколько лет мне было в тот момент, который возникает у меня в памяти. Но вот одно я помню точно — как мама читала мне сказку «Мио, мой Мио». И как я в неё влюбилась.
+
+                          Мне тогда было от силы четыре, потому что в пять я и сама бы прекрасно прочла бы эту книгу. Не знаю, почему мама решила познакомить меня с этой сказкой так рано, но так или иначе, Мио и его друг Юм-Юм надолго стали моими самыми главными героями.
+
+                          Позже к ним прибавятся ещё многие, чьи поступки так или иначе сформируют меня. Они появляются до сих пор, но есть первая детская любовь — и она вечна.
+
+                          Позже я перечитывала эту книгу много раз, и каждый раз открывала её с другой стороны. Она переставала быть просто детской сказкой, обрастала жестокими подробностями и внезапными вопросами. Но даже повзрослев, я помню маленького мальчика, который победил злого колдуна там, где это не смогли сделать взрослые. Победил силой своего сердца, победил любовью и состраданием. И в последний решающий момент его рука не дрогнула.
+
+                          Для меня это история о детской дружбе, самопожертвовании и вере. И о том, как именно нужно поступать со Злом, даже если тебе всего лишь десять. А ещё о невероятной силе, которая живёт в сердце каждого, силе, которая способна творить и разрушать. И помогает не отчаиваться даже в самые сложные моменты, если о ней не забывать."
+              - column:
+                  name: view_count
+                  value: 250
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-28 10:57.610
+              - column:
+                  name: title
+                  value: "Всем кто слышит"
+              - column:
+                  name: text
+                  value: "Привет :)"
+              - column:
+                  name: view_count
+                  value: 15
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-28 12:57.610
+              - column:
+                  name: title
+                  value: "Солнце!"
+              - column:
+                  name: text
+                  value: "Оно существует!"
+              - column:
+                  name: view_count
+                  value: 150
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-28 16:57.610
+              - column:
+                  name: title
+                  value: "..."
+              - column:
+                  name: text
+                  value: "Хорошо, что не зомби-апокалипсис"
+              - column:
+                  name: view_count
+                  value: 23
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-28 19:57.610
+              - column:
+                  name: title
+                  value: "А мы тут плюшками балуемся"
+              - column:
+                  name: text
+                  value: "Если кто в городе, приходите в гости. Напек кучу блинов, не знаю, куда девать. Хоть иди по соседям раздвай"
+              - column:
+                  name: view_count
+                  value: 5
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-29 10:57.610
+              - column:
+                  name: title
+                  value: "Отлично вчера погуляли"
+              - column:
+                  name: text
+                  value: "Даже не верится, что ночь уже закончилась, жаль расставаться, так хорошо посидели"
+              - column:
+                  name: view_count
+                  value: 10
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-29 19:57.610
+              - column:
+                  name: title
+                  value: "От работы дохнут кони, ну а я бессмертный пони"
+              - column:
+                  name: text
+                  value: "Ну в общем вы поняли... фиг вам, а не сокращённый день. Хорошо хоть удалёнка."
+              - column:
+                  name: view_count
+                  value: 150
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-29 21:50.610
+              - column:
+                  name: title
+                  value: "Сериал!"
+              - column:
+                  name: text
+                  value: "Скачал новый сериал, Авеню-5, давно так не смеялся. Глупо, конечо, но смешно"
+              - column:
+                  name: view_count
+                  value: 34
+        - insert:
+            tableName: posts
+            columns:
+              - column:
+                  name: is_active
+                  value: 1
+              - column:
+                  name: moderation_status
+                  value: ACCEPTED
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 7:50.610
+              - column:
+                  name: title
+                  value: "Не выспался..."
+              - column:
+                  name: text
+                  value: "Ну в общем, заявляю авторитетно, что просмотр сериала до 5 утра, потом подъём в 7, было моей самой плохой идеей."
+              - column:
+                  name: view_count
+                  value: 10
+
+#добавление лайков/дизлайков
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: post_id
+                  value: 12
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 1
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: post_id
+                  value: 13
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 0
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: post_id
+                  value: 12
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 1
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: post_id
+                  value: 14
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 1
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: post_id
+                  value: 12
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 1
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: post_id
+                  value: 14
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 0
+        - insert:
+            tableName: post_votes
+            columns:
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: post_id
+                  value: 14
+              - column:
+                  name: time
+                  value: 2020-04-29 00:25:57.610
+              - column:
+                  name: value
+                  value: 1

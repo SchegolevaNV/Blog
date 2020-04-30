@@ -75,6 +75,8 @@ databaseChangeLog:
                   type: INT(4)
                   constraints:
                     nullable: false
+                    foreignKeyName: user_post
+                    references: users(id)
               - column:
                   name: time
                   type: DATETIME
@@ -158,6 +160,8 @@ databaseChangeLog:
                   type: INT(4)
                   constraints:
                     nullable: false
+                    foreignKeyName: post_tag
+                    references: posts(id)
               - column:
                   name: tag_id
                   type: INT(4)
