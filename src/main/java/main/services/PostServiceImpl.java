@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Data
@@ -88,46 +89,90 @@ public class PostServiceImpl implements PostService
     }
 
     @Override
-    public PostResponseBody getPostByID(Post post)
+    public PostResponseBody getPostByID(int id)
     {
         List<CommentBody> commentBodies = new ArrayList<>();
         List<String> tags = new ArrayList<>();
 
-        UserBody postUser = new UserBody(post.getUser().getId(), post.getUser().getName());
+        Optional<Post> optionalPost = postRepository.findById(id);
 
-        List<Tag> tagList = post.getPostTags();
+        UserBody postUser = new UserBody(optionalPost.get().getUser().getId(), optionalPost.get().getUser().getName());
+
+        List<Tag> tagList = optionalPost.get().getPostTags();
         for (Tag tag : tagList)
         {
             tags.add(tag.getName());
         }
 
-        List<PostComment> comments = post.getPostComments();
+        List<PostComment> comments = optionalPost.get().getPostComments();
         for(PostComment comment : comments)
         {
             User commentUser = comment.getUser();
             UserCommentBody userCommentBody = new UserCommentBody(commentUser.getId(),
-                                                                  commentUser.getName(),
-                                                                  commentUser.getPhoto());
+                    commentUser.getName(),
+                    commentUser.getPhoto());
 
             commentBodies.add(new CommentBody(comment.getId(),
-                                              comment.getTime().format(formatter),
-                                              comment.getText(),
-                                              userCommentBody));
+                    comment.getTime().format(formatter),
+                    comment.getText(),
+                    userCommentBody));
         }
 
-        return PostResponseBody.builder().id(post.getId())
-                .time(post.getTime().format(formatter))
+        return PostResponseBody.builder().id(optionalPost.get().getId())
+                .time(optionalPost.get().getTime().format(formatter))
                 .user(postUser)
-                .title(post.getTitle())
-                .announce(getAnnounce(post))
-                .likeCount(post.getVotesCount("likes"))
-                .dislikeCount(post.getVotesCount("dislikes"))
-                .commentCount(post.getCommentsCount())
-                .viewCount(post.getViewCount())
+                .title(optionalPost.get().getTitle())
+                .announce(getAnnounce(optionalPost.get()))
+                .likeCount(optionalPost.get().getVotesCount("likes"))
+                .dislikeCount(optionalPost.get().getVotesCount("dislikes"))
+                .commentCount(optionalPost.get().getCommentsCount())
+                .viewCount(optionalPost.get().getViewCount())
                 .comments(commentBodies)
                 .tags(tags)
                 .build();
     }
+
+//    @Override
+//    public PostResponseBody getPostByID(Post post)
+//    {
+//        List<CommentBody> commentBodies = new ArrayList<>();
+//        List<String> tags = new ArrayList<>();
+//
+//        UserBody postUser = new UserBody(post.getUser().getId(), post.getUser().getName());
+//
+//        List<Tag> tagList = post.getPostTags();
+//        for (Tag tag : tagList)
+//        {
+//            tags.add(tag.getName());
+//        }
+//
+//        List<PostComment> comments = post.getPostComments();
+//        for(PostComment comment : comments)
+//        {
+//            User commentUser = comment.getUser();
+//            UserCommentBody userCommentBody = new UserCommentBody(commentUser.getId(),
+//                                                                  commentUser.getName(),
+//                                                                  commentUser.getPhoto());
+//
+//            commentBodies.add(new CommentBody(comment.getId(),
+//                                              comment.getTime().format(formatter),
+//                                              comment.getText(),
+//                                              userCommentBody));
+//        }
+//
+//        return PostResponseBody.builder().id(post.getId())
+//                .time(post.getTime().format(formatter))
+//                .user(postUser)
+//                .title(post.getTitle())
+//                .announce(getAnnounce(post))
+//                .likeCount(post.getVotesCount("likes"))
+//                .dislikeCount(post.getVotesCount("dislikes"))
+//                .commentCount(post.getCommentsCount())
+//                .viewCount(post.getViewCount())
+//                .comments(commentBodies)
+//                .tags(tags)
+//                .build();
+//    }
 
     @Override
     public PostWallResponseBody getPostsByTag(int offset, int limit, String tag) {

@@ -16,7 +16,7 @@ public class PostComment
     private int id;
 
     @Column(name = "parent_id")
-    private int parentId;
+    private Integer parentId;
 
     @NotNull
     @ManyToOne(cascade = CascadeType.ALL)

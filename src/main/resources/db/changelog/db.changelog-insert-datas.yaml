@@ -60,10 +60,10 @@ databaseChangeLog:
                   value: 2020-04-29 23:50:57.610
               - column:
                   name: title
-                  value: "Мой первый пост"
+                  value: "А есть ли жизнь на Марсе?"
               - column:
                   name: text
-                  value: "Всем привет!"
+                  value: "Вообще, народ, кто что думает? Говорят, на Марсе воду нашли. Может, там как у Брэдбери все под горами живут? Было бы прикольно. Только, чтобы не как у Брэдбери"
               - column:
                   name: view_count
                   value: 10
@@ -496,3 +496,386 @@ databaseChangeLog:
               - column:
                   name: value
                   value: 1
+
+#добавление тегов
+        - insert:
+            tableName: tags
+            columns:
+              - column:
+                  name: name
+                  value: "новости"
+        - insert:
+            tableName: tags
+            columns:
+              - column:
+                  name: name
+                  value: "этот ужасный мир"
+        - insert:
+            tableName: tags
+            columns:
+              - column:
+                  name: name
+                  value: "Дикобразы! Кругом дикобразы"
+        - insert:
+            tableName: tags
+            columns:
+              - column:
+                  name: name
+                  value: "потому что мы банда"
+        - insert:
+            tableName: tags
+            columns:
+              - column:
+                  name: name
+                  value: "лыт"
+
+#связывание тегов и постов
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 1
+              - column:
+                  name: tag_id
+                  value: 3
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 2
+              - column:
+                  name: tag_id
+                  value: 2
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 3
+              - column:
+                  name: tag_id
+                  value: 5
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 4
+              - column:
+                  name: tag_id
+                  value: 1
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 5
+              - column:
+                  name: tag_id
+                  value: 3
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 6
+              - column:
+                  name: tag_id
+                  value: 4
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 7
+              - column:
+                  name: tag_id
+                  value: 5
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 8
+              - column:
+                  name: tag_id
+                  value: 5
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 9
+              - column:
+                  name: tag_id
+                  value: 5
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 10
+              - column:
+                  name: tag_id
+                  value: 4
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 11
+              - column:
+                  name: tag_id
+                  value: 4
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 12
+              - column:
+                  name: tag_id
+                  value: 2
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 13
+              - column:
+                  name: tag_id
+                  value: 3
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 14
+              - column:
+                  name: tag_id
+                  value: 2
+        - insert:
+            tableName: tag2post
+            columns:
+              - column:
+                  name: post_id
+                  value: 13
+              - column:
+                  name: tag_id
+                  value: 5
+
+#добавление комментариев
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 1
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 22:50:57.610
+              - column:
+                  name: text
+                  value: "А кто такой Брэдбери?"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: parent_id
+                  value: 1
+              - column:
+                  name: post_id
+                  value: 1
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 23:50:57.610
+              - column:
+                  name: text
+                  value: "Дерёвня )) Писатель такой был, фантаст. Очень рекомендую 'Марсианские хроники почитать', закачаешься"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 4
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 22:50:57.610
+              - column:
+                  name: text
+                  value: "Поздравляю!"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 11
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 22:50:57.610
+              - column:
+                  name: text
+                  value: "Ага, надо обязательно повторить!"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 11
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 22:55:57.610
+              - column:
+                  name: text
+                  value: "Но в следующий раз нужно ещё и гитару прихватить, ты напомни."
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                    name: parent_id
+                    value: 5
+              - column:
+                  name: post_id
+                  value: 11
+              - column:
+                  name: user_id
+                  value: 1
+              - column:
+                  name: time
+                  value: 2020-04-30 23:10:57.610
+              - column:
+                  name: text
+                  value: "Да, гитары не хватало. Напомню, только петь будешь ты, я давно не практиковался."
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                    name: parent_id
+                    value: 6
+              - column:
+                  name: post_id
+                  value: 11
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 23:30:57.610
+              - column:
+                  name: text
+                  value: "Фигня вопрос, но если что, я тебе гитару могу и раньше закинуть. Для тренировки"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 6
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 22:59:57.610
+              - column:
+                  name: text
+                  value: "Круто, а мне всегда Юм-Юм нравился, он классный, и самый лучший друг"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 7
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 22:59:57.610
+              - column:
+                  name: text
+                  value: "Привет!"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 12
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-29 23:59:57.610
+              - column:
+                  name: text
+                  value: "Дружище, ты попутал, сокращёнка завтра. Эх ты :) Но вообще до этого завтра осталось три секунды, так что завязывай"
+        - insert:
+            tableName: post_comments
+            columns:
+              - column:
+                  name: post_id
+                  value: 13
+              - column:
+                  name: user_id
+                  value: 2
+              - column:
+                  name: time
+                  value: 2020-04-30 12:59:57.610
+              - column:
+                  name: text
+                  value: "О круто, надо посмотреть. А то в последнее время вокруг сплошные ужастики и триллеры."
+
+#добавление глобальных настроек
+        - insert:
+            tableName: global_settings
+            columns:
+              - column:
+                  name: code
+                  value: "MULTIUSER_MODE"
+              - column:
+                  name: name
+                  value: "Многопользовательский режим"
+              - column:
+                  name: value
+                  value: "YES"
+        - insert:
+            tableName: global_settings
+            columns:
+              - column:
+                  name: code
+                  value: "POST_PREMODERATION"
+              - column:
+                  name: name
+                  value: "Премодерация постов"
+              - column:
+                  name: value
+                  value: "YES"
+        - insert:
+            tableName: global_settings
+            columns:
+              - column:
+                  name: code
+                  value: "STATISTICS_IS_PUBLIC"
+              - column:
+                  name: name
+                  value: "Показывать всем статистику блога"
+              - column:
+                  name: value
+                  value: "YES"

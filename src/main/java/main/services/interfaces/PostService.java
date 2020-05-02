@@ -25,7 +25,8 @@ public interface PostService
     PostWallResponseBody getAllPosts(int offset, int limit, String mode);
     PostWallResponseBody searchPosts(int offset, int limit, String query);
     PostWallResponseBody getPostsByDate(int offset, int limit, String date);
-    PostResponseBody getPostByID(Post post);
+  //  PostResponseBody getPostByID(Post post);
+    PostResponseBody getPostByID(int id);
     PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
     PostWallResponseBody getPostsForModeration(int offset, int limit, String status);
 

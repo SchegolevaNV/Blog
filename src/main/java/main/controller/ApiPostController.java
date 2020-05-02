@@ -46,15 +46,21 @@ public class ApiPostController
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<PostResponseBody> getPost (@PathVariable("id") int id)
+    public PostResponseBody getPost (@PathVariable("id") int id)
     {
-        Optional<Post> optionalPost = postRepository.findById(id);
-        if (optionalPost.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-
-        return new ResponseEntity<PostResponseBody> (postService.getPostByID(optionalPost.get()), HttpStatus.OK);
+        return postService.getPostByID(id);
     }
+
+//    @GetMapping("{id}")
+//    public ResponseEntity<PostResponseBody> getPost (@PathVariable("id") int id)
+//    {
+////        Optional<Post> optionalPost = postRepository.findById(id);
+////        if (optionalPost.isEmpty()) {
+////            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+////        }
+//
+//        return new ResponseEntity<PostResponseBody> (postService.getPostByID(optionalPost.get()), HttpStatus.OK);
+//    }
 
     @GetMapping("byTag")
     public PostWallResponseBody getPostsByTag (int offset, int limit, String tag)
