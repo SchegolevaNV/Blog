@@ -4,16 +4,12 @@ import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
 import main.model.enums.ModeValue;
-
-import main.model.enums.ModerationStatus;
-import main.repositories.PostRepository;
-import main.services.bodies.PostBody;
 import main.services.bodies.UserBody;
 import main.services.comparators.CommentPostComparator;
 import main.services.comparators.DatePostComparator;
 import main.services.comparators.LikePostComparator;
 
-import java.time.LocalDateTime;
+import javax.persistence.Query;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,10 +21,10 @@ public interface PostService
     PostWallResponseBody getAllPosts(int offset, int limit, String mode);
     PostWallResponseBody searchPosts(int offset, int limit, String query);
     PostWallResponseBody getPostsByDate(int offset, int limit, String date);
-  //  PostResponseBody getPostByID(Post post);
-    PostResponseBody getPostByID(int id);
+    PostResponseBody getPostById(int id);
     PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
     PostWallResponseBody getPostsForModeration(int offset, int limit, String status);
+    PostWallResponseBody getMyPosts(int offset, int limit, String status);
 
     /** default methods*/
 
@@ -46,19 +42,17 @@ public interface PostService
             return posts;
     }
 
-    default List<PostBody> getListPostBodies(List<Post> posts, int offset, int limit)
+    default List<PostResponseBody> getListPostBodies(List<Post> posts)
     {
-        List<PostBody> postBodies = new ArrayList<>();
-        int finish = Math.min(posts.size(), offset + limit);
+        List<PostResponseBody> postBodies = new ArrayList<>();
 
-        for (int i = offset; i < finish; i++)
+        for (int i = 0; i < posts.size(); i++)
         {
             Post post = posts.get(i);
-            UserBody user = new UserBody(post.getUser().getId(), post.getUser().getName());
 
-            postBodies.add(PostBody.builder().id(post.getId())
+            postBodies.add(PostResponseBody.builder().id(post.getId())
                     .time(post.getTime().format(formatter))
-                    .user(user)
+                    .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
                     .title(post.getTitle())
                     .announce(getAnnounce(post))
                     .likeCount(post.getVotesCount("likes"))
@@ -68,19 +62,6 @@ public interface PostService
                     .build());
         }
         return postBodies;
-    }
-
-    default List<Post> getPostByDefault (PostRepository postRepository)
-    {
-        Iterable<Post> postIterable = postRepository.findAll();
-        List<Post> posts = new ArrayList<>();
-
-        for (Post post : postIterable) {
-
-            if (isPostAccepted(post))
-                posts.add(post);
-        }
-        return posts;
     }
 
     default String getAnnounce(Post post)
@@ -94,10 +75,11 @@ public interface PostService
         return announce;
     }
 
-    default boolean isPostAccepted(Post post)
+    default Query setResult(Query query, int offset, int limit)
     {
-        return post.getIsActive() == 1 &&
-                post.getModerationStatus().equals(ModerationStatus.ACCEPTED) &&
-                post.getTime().isBefore(LocalDateTime.now());
+        query.setFirstResult(offset);
+        query.setMaxResults(limit);
+
+        return query;
     }
 }

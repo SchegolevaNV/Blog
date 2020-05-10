@@ -1,6 +1,9 @@
 package main.controller;
 
-import main.repositories.PostRepository;
+import main.api.responses.CalendarResponseBody;
+import main.api.responses.SettingsResponseBody;
+import main.api.responses.TagsResponseBody;
+import main.services.interfaces.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +18,7 @@ public class ApiGeneralController
 {
 
     @Autowired
-    PostRepository postRepository;
+    GeneralService generalService;
 
     @GetMapping("init")
     public Blog getBlogInfo()
@@ -28,21 +31,34 @@ public class ApiGeneralController
     }
 
     @GetMapping("calendar")
-    public void getCalendar(int year)
+    public CalendarResponseBody getCalendar(String year)
     {
-        return;
+        return generalService.getCalendar(year);
     }
 
     @GetMapping("tag")
-    public ResponseEntity getTags(String query)
+    @ResponseBody
+    public TagsResponseBody getTags(@RequestParam (required = false) String query)
     {
-        return null;
+        return generalService.getTags(query);
     }
 
     @GetMapping("settings")
-    public ResponseEntity getSettings()
+    public SettingsResponseBody getSettings()
     {
-        return null;
+        return generalService.getSettings();
     }
 
+    @PutMapping ("settings")
+    public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
+    {
+        return generalService.putSettings(settings);
+    }
+
+//
+//    @PutMapping ("settings")
+//    public @ResponseBody SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
+//    {
+//        return generalService.putSettings(MULTIUSER_MODE,POST_PREMODERATION,STATISTICS_IS_PUBLIC);
+//    }
 }

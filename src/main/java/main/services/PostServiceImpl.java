@@ -1,203 +1,205 @@
 package main.services;
 
-import lombok.Data;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.Tag;
 import main.model.User;
+import main.model.enums.ModerationStatus;
 import main.repositories.PostRepository;
+import main.repositories.TagRepository;
 import main.services.bodies.CommentBody;
 import main.services.bodies.UserBody;
-import main.services.bodies.UserCommentBody;
 import main.services.interfaces.PostService;
+import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-@Data
-public class PostServiceImpl implements PostService
+public class PostServiceImpl implements PostService, QueryService
 {
     @Autowired
     PostRepository postRepository;
 
+    @Autowired
+    TagRepository tagRepository;
+
+    @PersistenceContext
+    EntityManager entityManager;
+
     @Override
     public PostWallResponseBody getAllPosts (int offset, int limit, String mode)
     {
-        int count = 0;
-        List<Post> posts = new ArrayList<>();
-        Iterable<Post> postIterable = postRepository.findAll();
+        Query allPosts = entityManager.createQuery(postsSelect).setParameter("dateNow", LocalDateTime.now());
 
-        for (Post post : postIterable) {
-            count++;
+        int count = allPosts.getResultList().size();
 
-            if (isPostAccepted(post))
-                posts.add(post);
-        }
+        allPosts.setFirstResult(offset);
+        allPosts.setMaxResults(limit);
 
-        posts = sortPosts(posts, mode);
+        List<Post> posts = sortPosts(allPosts.getResultList(), mode);
 
-        return new PostWallResponseBody(count, getListPostBodies(posts, offset, limit));
+        return new PostWallResponseBody(count, getListPostBodies(posts));
     }
 
     @Override
     public PostWallResponseBody searchPosts(int offset, int limit, String query)
     {
-        Iterable<Post> postIterable = postRepository.findAll();
+        Query allPosts = entityManager.createQuery(postsSelect.concat(" AND p.text LIKE '%" + query + "%'"))
+                .setParameter("dateNow", LocalDateTime.now());
 
-        int count = 0;
-        List<Post> posts = new ArrayList<>();
-        for (Post post : postIterable) {
-            count++;
+        int count = allPosts.getResultList().size();
 
-            if (isPostAccepted(post))
-            {
-                if (query == null || post.getText().contains(query))
-                {
-                    posts.add(post);;
-                }
-            }
-        }
+        allPosts.setFirstResult(offset);
+        allPosts.setMaxResults(limit);
 
-        return new PostWallResponseBody(count, getListPostBodies(posts, offset, limit));
+        List<Post> posts = allPosts.getResultList();
+
+        return new PostWallResponseBody(count, getListPostBodies(posts));
     }
 
     @Override
     public PostWallResponseBody getPostsByDate(int offset, int limit, String date) {
 
-        Iterable<Post> postIterable = postRepository.findAll();
-        LocalDate localDate = LocalDate.parse(date);
+        Query allPosts = entityManager.createQuery(postsSelect.concat(" AND to_char(p.time,'YYYY-MM-DD') LIKE '%" + date + "%'"))
+                .setParameter("dateNow", LocalDateTime.now());
 
-        int count = 0;
-        List<Post> posts = new ArrayList<>();
-        for (Post post : postIterable) {
-            count++;
+        int count = allPosts.getResultList().size();
 
-            if (isPostAccepted(post) && post.getTime().toLocalDate().isEqual(localDate))
-            {
-                posts.add(post);
-            }
-        }
+        allPosts.setFirstResult(offset);
+        allPosts.setMaxResults(limit);
 
-        return new PostWallResponseBody(count, getListPostBodies(posts, offset, limit));
+        List<Post> posts = allPosts.getResultList();
+
+        return new PostWallResponseBody(count, getListPostBodies(posts));
     }
 
     @Override
-    public PostResponseBody getPostByID(int id)
+    public PostWallResponseBody getPostsByTag(int offset, int limit, String tag)
+    {
+        Tag myTag = tagRepository.findByName(tag);
+        List<Post> posts = myTag.getTagsPosts();
+
+        posts.removeIf(post -> post.getIsActive() != 1
+                && post.getModerationStatus() != ModerationStatus.ACCEPTED
+                && !post.getTime().isBefore(LocalDateTime.now()));
+
+        int finish = Math.min(posts.size(), offset + limit);
+
+        return new PostWallResponseBody(posts.size(), getListPostBodies(posts.subList(offset, finish)));
+    }
+
+    @Override
+    public PostResponseBody getPostById(int id)
     {
         List<CommentBody> commentBodies = new ArrayList<>();
         List<String> tags = new ArrayList<>();
 
-        Optional<Post> optionalPost = postRepository.findById(id);
+        Post post = postRepository.findById(id);
 
-        UserBody postUser = new UserBody(optionalPost.get().getUser().getId(), optionalPost.get().getUser().getName());
-
-        List<Tag> tagList = optionalPost.get().getPostTags();
+        List<Tag> tagList = post.getPostTags();
         for (Tag tag : tagList)
         {
             tags.add(tag.getName());
         }
 
-        List<PostComment> comments = optionalPost.get().getPostComments();
+        List<PostComment> comments = post.getPostComments();
         for(PostComment comment : comments)
         {
             User commentUser = comment.getUser();
-            UserCommentBody userCommentBody = new UserCommentBody(commentUser.getId(),
-                    commentUser.getName(),
-                    commentUser.getPhoto());
-
             commentBodies.add(new CommentBody(comment.getId(),
                     comment.getTime().format(formatter),
                     comment.getText(),
-                    userCommentBody));
+                    UserBody.builder().id(commentUser.getId())
+                            .name(commentUser.getName())
+                            .photo(commentUser.getPhoto()).build()));
         }
 
-        return PostResponseBody.builder().id(optionalPost.get().getId())
-                .time(optionalPost.get().getTime().format(formatter))
-                .user(postUser)
-                .title(optionalPost.get().getTitle())
-                .announce(getAnnounce(optionalPost.get()))
-                .likeCount(optionalPost.get().getVotesCount("likes"))
-                .dislikeCount(optionalPost.get().getVotesCount("dislikes"))
-                .commentCount(optionalPost.get().getCommentsCount())
-                .viewCount(optionalPost.get().getViewCount())
+        return PostResponseBody.builder().id(post.getId())
+                .time(post.getTime().format(formatter))
+                .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
+                .title(post.getTitle())
+                .announce(getAnnounce(post))
+                .likeCount(post.getVotesCount("likes"))
+                .dislikeCount(post.getVotesCount("dislikes"))
+                .commentCount(post.getCommentsCount())
+                .viewCount(post.getViewCount())
                 .comments(commentBodies)
                 .tags(tags)
                 .build();
     }
 
-//    @Override
-//    public PostResponseBody getPostByID(Post post)
-//    {
-//        List<CommentBody> commentBodies = new ArrayList<>();
-//        List<String> tags = new ArrayList<>();
-//
-//        UserBody postUser = new UserBody(post.getUser().getId(), post.getUser().getName());
-//
-//        List<Tag> tagList = post.getPostTags();
-//        for (Tag tag : tagList)
-//        {
-//            tags.add(tag.getName());
-//        }
-//
-//        List<PostComment> comments = post.getPostComments();
-//        for(PostComment comment : comments)
-//        {
-//            User commentUser = comment.getUser();
-//            UserCommentBody userCommentBody = new UserCommentBody(commentUser.getId(),
-//                                                                  commentUser.getName(),
-//                                                                  commentUser.getPhoto());
-//
-//            commentBodies.add(new CommentBody(comment.getId(),
-//                                              comment.getTime().format(formatter),
-//                                              comment.getText(),
-//                                              userCommentBody));
-//        }
-//
-//        return PostResponseBody.builder().id(post.getId())
-//                .time(post.getTime().format(formatter))
-//                .user(postUser)
-//                .title(post.getTitle())
-//                .announce(getAnnounce(post))
-//                .likeCount(post.getVotesCount("likes"))
-//                .dislikeCount(post.getVotesCount("dislikes"))
-//                .commentCount(post.getCommentsCount())
-//                .viewCount(post.getViewCount())
-//                .comments(commentBodies)
-//                .tags(tags)
-//                .build();
-//    }
-
     @Override
-    public PostWallResponseBody getPostsByTag(int offset, int limit, String tag) {
-        Iterable<Post> postIterable = postRepository.findAll();
+    public PostWallResponseBody getPostsForModeration(int offset, int limit, String status) {
 
+        String sessionId = AuthServiceImpl.getSession().getId();
+        status = ModerationStatus.valueOf(status.toUpperCase()).toString();
+        List<Post> postsList = null;
         int count = 0;
-        List<Post> posts = new ArrayList<>();
-        for (Post post : postIterable) {
-            count++;
+        int userId = AuthServiceImpl.activeSessions.get(sessionId);
 
-            if (isPostAccepted(post))
-            {
-                List<Tag> tagList = post.getPostTags();
-                for (Tag tags : tagList)
-                {
-                    if (tags.getName().contains(tag))
-                        posts.add(post);
-                }
-            }
+        if (AuthServiceImpl.activeSessions.containsKey(sessionId))
+        {
+            Query allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
+                    "AND p.moderationStatus = '" + status + "' AND p.moderatorId = " + userId);
+            count = allPosts.getResultList().size();
+            setResult(allPosts, offset, limit);
+
+            postsList = allPosts.getResultList();
         }
-        return new PostWallResponseBody(count, getListPostBodies(posts, offset, limit));
+
+        List<PostResponseBody> posts = new ArrayList<>();
+        for (Post post : postsList)
+        {
+            posts.add(PostResponseBody.builder()
+                    .id(post.getId())
+                    .time(post.getTime().toString())
+                    .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
+                    .title(post.getTitle())
+                    .announce(getAnnounce(post)).build());
+        }
+
+        return new PostWallResponseBody(count, posts);
     }
 
     @Override
-    public PostWallResponseBody getPostsForModeration(int offset, int limit, String status) {
-        return null;
+    public PostWallResponseBody getMyPosts(int offset, int limit, String status)
+    {
+        String sessionId = AuthServiceImpl.getSession().getId();
+        Query allPosts = null;
+        int count = 0;
+
+        int userId = AuthServiceImpl.activeSessions.get(sessionId);
+
+        if (AuthServiceImpl.activeSessions.containsKey(sessionId)) {
+            if (status.equals("inactive")) {
+                allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 0 AND p.user = " + userId);
+                count = allPosts.getResultList().size();
+                setResult(allPosts, offset, limit);
+            }
+            else {
+                if (status.equals("pending"))
+                    status = ModerationStatus.NEW.toString();
+                if (status.equals("published"))
+                    status = ModerationStatus.ACCEPTED.toString();
+                if (status.equals("declined"))
+                    status = ModerationStatus.DECLINED.toString();
+
+                allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
+                        "AND p.moderationStatus = '" + status + "' AND p.user = " + userId);
+                count = allPosts.getResultList().size();
+                setResult(allPosts, offset, limit);
+            }
+        }
+        List<Post> posts = allPosts.getResultList();
+        return new PostWallResponseBody(count, getListPostBodies(posts));
     }
 }

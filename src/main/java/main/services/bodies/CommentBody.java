@@ -12,5 +12,5 @@ public class CommentBody
     private int id;
     private String time;
     private String text;
-    private UserCommentBody user;
+    private UserBody user;
 }

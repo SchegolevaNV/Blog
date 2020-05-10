@@ -1,18 +1,16 @@
 package main.api.responses;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import main.services.bodies.CommentBody;
 import main.services.bodies.UserBody;
 
 import java.util.List;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PostResponseBody
 {
     private int id;
