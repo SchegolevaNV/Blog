@@ -2,6 +2,7 @@ package main.services;
 
 import main.api.responses.CalendarResponseBody;
 import main.api.responses.SettingsResponseBody;
+import main.api.responses.StatisticResponseBody;
 import main.api.responses.TagsResponseBody;
 import main.model.GlobalSettings;
 import main.model.Post;
@@ -104,17 +105,13 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     @Override
     public SettingsResponseBody getSettings()
     {
-        String sessionId = AuthServiceImpl.getSession().getId();
-
         boolean MULTIUSER_MODE = false;
         boolean POST_PREMODERATION = false;
         boolean STATISTICS_IS_PUBLIC = false;
 
-        if (AuthServiceImpl.activeSessions.containsKey(sessionId))
+        if (AuthServiceImpl.isUserAuthorize())
         {
-            int userId = AuthServiceImpl.activeSessions.get(sessionId);
-            User user = userRepository.findById(userId);
-
+            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
             if (user.getIsModerator() == 1)
             {
                 Query settings = entityManager.createQuery("FROM GlobalSettings s");
@@ -140,50 +137,18 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         return null;
     }
 
-    @Override
-    @Transactional
-    public SettingsResponseBody putSettings(SettingsResponseBody settingsResponseBody)
-    {
-        String value = "NO";
-        HashMap<String, Boolean> codes = new HashMap<>();
-        codes.put("MULTIUSER_MODE", settingsResponseBody.isMULTIUSER_MODE());
-        codes.put("POST_PREMODERATION", settingsResponseBody.isPOST_PREMODERATION());
-        codes.put("STATISTICS_IS_PUBLIC", settingsResponseBody.isSTATISTICS_IS_PUBLIC());
-
-        String sessionId = AuthServiceImpl.getSession().getId();
-        if (AuthServiceImpl.activeSessions.containsKey(sessionId)) {
-            int userId = AuthServiceImpl.activeSessions.get(sessionId);
-            User user = userRepository.findById(userId);
-
-            if (user.getIsModerator() == 1) {
-                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
-                    if (code.getValue())
-                        value = "YES";
-                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
-                    updateSettings.setParameter("code", code.getKey());
-                    updateSettings.setParameter("value", value);
-                }
-            }
-            return settingsResponseBody;
-        }
-        return null;
-    }
-
 //    @Override
 //    @Transactional
-//    public SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
+//    public SettingsResponseBody putSettings(SettingsResponseBody settingsResponseBody)
 //    {
 //        String value = "NO";
 //        HashMap<String, Boolean> codes = new HashMap<>();
-//        codes.put("MULTIUSER_MODE", MULTIUSER_MODE);
-//        codes.put("POST_PREMODERATION", POST_PREMODERATION);
-//        codes.put("STATISTICS_IS_PUBLIC", STATISTICS_IS_PUBLIC);
+//        codes.put("MULTIUSER_MODE", settingsResponseBody.isMULTIUSER_MODE());
+//        codes.put("POST_PREMODERATION", settingsResponseBody.isPOST_PREMODERATION());
+//        codes.put("STATISTICS_IS_PUBLIC", settingsResponseBody.isSTATISTICS_IS_PUBLIC());
 //
-//        String sessionId = AuthServiceImpl.getSession().getId();
-//        if (AuthServiceImpl.activeSessions.containsKey(sessionId)) {
-//            int userId = AuthServiceImpl.activeSessions.get(sessionId);
-//            User user = userRepository.findById(userId);
-//
+//        if (AuthServiceImpl.isUserAuthorize()) {
+//            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
 //            if (user.getIsModerator() == 1) {
 //                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
 //                    if (code.getValue())
@@ -192,9 +157,51 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 //                    updateSettings.setParameter("code", code.getKey());
 //                    updateSettings.setParameter("value", value);
 //                }
-//                return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
 //            }
+//            return settingsResponseBody;
 //        }
 //        return null;
 //    }
+
+    @Override
+    public ResponseEntity<StatisticResponseBody> getMyStatistics()
+    {
+        //User user = userRepository.findById(userId);
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<StatisticResponseBody> getAllStatistics() {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
+    {
+        String value = "NO";
+        HashMap<String, Boolean> codes = new HashMap<>();
+        codes.put("MULTIUSER_MODE", MULTIUSER_MODE);
+        codes.put("POST_PREMODERATION", POST_PREMODERATION);
+        codes.put("STATISTICS_IS_PUBLIC", STATISTICS_IS_PUBLIC);
+
+        if (AuthServiceImpl.isUserAuthorize()) {
+            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            if (user.getIsModerator() == 1) {
+                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
+                    if (code.getValue())
+                        value = "YES";
+                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
+                    updateSettings.setParameter("code", code.getKey());
+                    updateSettings.setParameter("value", value);
+
+                    System.out.println(updateSettings.toString());
+
+                    updateSettings.executeUpdate();
+                }
+                return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
+            }
+        }
+        return null;
+    }
 }

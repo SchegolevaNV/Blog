@@ -12,4 +12,6 @@ public class AuthResponseBody
 {
     private boolean result;
     private UserBody user;
+    private String secret;
+    private String image;
 }

@@ -127,7 +127,7 @@ public class PostServiceImpl implements PostService, QueryService
                 .time(post.getTime().format(formatter))
                 .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
                 .title(post.getTitle())
-                .announce(getAnnounce(post))
+                .text(post.getText())
                 .likeCount(post.getVotesCount("likes"))
                 .dislikeCount(post.getVotesCount("dislikes"))
                 .commentCount(post.getCommentsCount())
@@ -140,14 +140,13 @@ public class PostServiceImpl implements PostService, QueryService
     @Override
     public PostWallResponseBody getPostsForModeration(int offset, int limit, String status) {
 
-        String sessionId = AuthServiceImpl.getSession().getId();
         status = ModerationStatus.valueOf(status.toUpperCase()).toString();
         List<Post> postsList = null;
         int count = 0;
-        int userId = AuthServiceImpl.activeSessions.get(sessionId);
 
-        if (AuthServiceImpl.activeSessions.containsKey(sessionId))
+        if (AuthServiceImpl.isUserAuthorize())
         {
+            int userId = AuthServiceImpl.getAuthorizedUserId();
             Query allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
                     "AND p.moderationStatus = '" + status + "' AND p.moderatorId = " + userId);
             count = allPosts.getResultList().size();
@@ -173,17 +172,13 @@ public class PostServiceImpl implements PostService, QueryService
     @Override
     public PostWallResponseBody getMyPosts(int offset, int limit, String status)
     {
-        String sessionId = AuthServiceImpl.getSession().getId();
         Query allPosts = null;
         int count = 0;
 
-        int userId = AuthServiceImpl.activeSessions.get(sessionId);
-
-        if (AuthServiceImpl.activeSessions.containsKey(sessionId)) {
+        if (AuthServiceImpl.isUserAuthorize()) {
+            int userId = AuthServiceImpl.getAuthorizedUserId();
             if (status.equals("inactive")) {
                 allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 0 AND p.user = " + userId);
-                count = allPosts.getResultList().size();
-                setResult(allPosts, offset, limit);
             }
             else {
                 if (status.equals("pending"))
@@ -195,9 +190,9 @@ public class PostServiceImpl implements PostService, QueryService
 
                 allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
                         "AND p.moderationStatus = '" + status + "' AND p.user = " + userId);
-                count = allPosts.getResultList().size();
-                setResult(allPosts, offset, limit);
             }
+            count = allPosts.getResultList().size();
+            setResult(allPosts, offset, limit);
         }
         List<Post> posts = allPosts.getResultList();
         return new PostWallResponseBody(count, getListPostBodies(posts));

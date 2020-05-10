@@ -18,6 +18,7 @@ public class PostResponseBody
     private UserBody user;
     private String title;
     private String announce;
+    private String text;
     private int likeCount;
     private int dislikeCount;
     private int commentCount;

@@ -75,9 +75,22 @@ public class AuthServiceImpl implements AuthService
         return null;
     }
 
-    public static HttpSession getSession() {
+    private static HttpSession getSession()
+    {
         ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
         return attr.getRequest().getSession(true); // true == allow create
+    }
+
+    public static boolean isUserAuthorize()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.containsKey(sessionId);
+    }
+
+    public static int getAuthorizedUserId()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.get(sessionId);
     }
 }
 

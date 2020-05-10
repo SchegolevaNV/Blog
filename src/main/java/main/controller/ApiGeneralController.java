@@ -6,7 +6,6 @@ import main.api.responses.TagsResponseBody;
 import main.services.interfaces.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import main.configuration.Blog;
@@ -52,13 +51,6 @@ public class ApiGeneralController
     @PutMapping ("settings")
     public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
     {
-        return generalService.putSettings(settings);
+        return generalService.putSettings(settings.isMULTIUSER_MODE(), settings.isPOST_PREMODERATION(), settings.isSTATISTICS_IS_PUBLIC());
     }
-
-//
-//    @PutMapping ("settings")
-//    public @ResponseBody SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
-//    {
-//        return generalService.putSettings(MULTIUSER_MODE,POST_PREMODERATION,STATISTICS_IS_PUBLIC);
-//    }
 }
