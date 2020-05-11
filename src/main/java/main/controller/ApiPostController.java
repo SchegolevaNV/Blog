@@ -1,14 +1,14 @@
 package main.controller;
 
 
+import main.api.requests.ApiRequestBody;
+import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
-import main.repositories.PostRepository;
 import main.services.interfaces.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -62,30 +62,16 @@ public class ApiPostController
     {
         return postService.getMyPosts(offset, limit, status);
     }
-//
-//    @PostMapping(value = "/api/post", params = {"time", "active", "title", "text", "tags"})
-//    public void setPost(LocalDateTime time, byte active, String title, String text, String tags)
-//    {
-//       return;
-//    }
-//
-//    @PutMapping(value = "/api/post/{id}", params = {"time", "active", "title", "text", "tags"})
-//    public void postEdit(@PathVariable("id") int id, LocalDateTime time, byte active, String title, String text, String tags)
-//    {
-//        return;
-//    }
-//
-//    @PostMapping(value = "/api/comment", params = {"parent_id", "post_id", "text"})
-//    public void addComment(int parent_id, int post_id, String text)
-//    {
-//        return;
-//    }
-//
-//    @PostMapping(value = "/api/moderation", params = {"post_id", "decision"})
-//    public void moderatePost()
-//    {
-//       // ???
-//        return;
-//    }
 
+    @PostMapping("like")
+    public ApiResponseBody setLike (@RequestBody ApiRequestBody body)
+    {
+        return postService.postLike(body.getPost_id());
+    }
+
+    @PostMapping("dislike")
+    public ApiResponseBody setDisLike (@RequestBody ApiRequestBody body)
+    {
+        return postService.postDislike(body.getPost_id());
+    }
 }

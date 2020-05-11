@@ -10,7 +10,7 @@ import main.services.bodies.ErrorsBody;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponseBody
 {
-    private int id;
+    private Integer id;
     private boolean result;
     private ErrorsBody errors;
 }

@@ -2,10 +2,13 @@ package main.controller;
 
 import main.api.responses.CalendarResponseBody;
 import main.api.responses.SettingsResponseBody;
+import main.api.responses.StatisticResponseBody;
 import main.api.responses.TagsResponseBody;
 import main.services.interfaces.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import main.configuration.Blog;
@@ -52,5 +55,17 @@ public class ApiGeneralController
     public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
     {
         return generalService.putSettings(settings.isMULTIUSER_MODE(), settings.isPOST_PREMODERATION(), settings.isSTATISTICS_IS_PUBLIC());
+    }
+
+    @GetMapping("statistics/my")
+    public StatisticResponseBody getMyStatistics()
+    {
+        return generalService.getMyStatistics();
+    }
+
+    @GetMapping("statistics/all")
+    public ResponseEntity<StatisticResponseBody> getAllStatistics()
+    {
+        return generalService.getAllStatistics();
     }
 }

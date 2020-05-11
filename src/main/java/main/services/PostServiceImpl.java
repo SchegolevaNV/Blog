@@ -1,18 +1,19 @@
 package main.services;
 
+import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
-import main.model.Post;
-import main.model.PostComment;
-import main.model.Tag;
-import main.model.User;
+import main.model.*;
 import main.model.enums.ModerationStatus;
 import main.repositories.PostRepository;
+import main.repositories.PostVoteRepository;
 import main.repositories.TagRepository;
+import main.repositories.UserRepository;
 import main.services.bodies.CommentBody;
 import main.services.bodies.UserBody;
 import main.services.interfaces.PostService;
 import main.services.interfaces.QueryService;
+import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,12 @@ public class PostServiceImpl implements PostService, QueryService
 
     @Autowired
     TagRepository tagRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    PostVoteRepository postVoteRepository;
 
     @PersistenceContext
     EntityManager entityManager;
@@ -196,5 +203,46 @@ public class PostServiceImpl implements PostService, QueryService
         }
         List<Post> posts = allPosts.getResultList();
         return new PostWallResponseBody(count, getListPostBodies(posts));
+    }
+
+    @Override
+    public ApiResponseBody postLike(int postId)
+    {
+        if (AuthServiceImpl.isUserAuthorize())
+        {
+            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            Post post = postRepository.findById(postId);
+            PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
+
+            if (postVote != null)
+            {
+                if (postVote.getValue() == 1) {
+                    return ApiResponseBody.builder().result(false).build();
+                }
+                else postVoteRepository.deleteById(postVote.getId());
+            }
+            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(1).build());
+        }
+        return ApiResponseBody.builder().result(true).build();
+    }
+
+    @Override
+    public ApiResponseBody postDislike(int postId) {
+        if (AuthServiceImpl.isUserAuthorize())
+        {
+            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            Post post = postRepository.findById(postId);
+            PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
+
+            if (postVote != null)
+            {
+                if (postVote.getValue() == 0) {
+                    return ApiResponseBody.builder().result(false).build();
+                }
+                else postVoteRepository.deleteById(postVote.getId());
+            }
+            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(1).build());
+        }
+        return ApiResponseBody.builder().result(true).build();
     }
 }

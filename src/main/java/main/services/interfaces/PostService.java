@@ -1,5 +1,6 @@
 package main.services.interfaces;
 
+import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
@@ -25,6 +26,8 @@ public interface PostService
     PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
     PostWallResponseBody getPostsForModeration(int offset, int limit, String status);
     PostWallResponseBody getMyPosts(int offset, int limit, String status);
+    ApiResponseBody postLike(int id);
+    ApiResponseBody postDislike (int id);
 
     /** default methods*/
 

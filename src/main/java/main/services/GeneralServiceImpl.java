@@ -4,17 +4,17 @@ import main.api.responses.CalendarResponseBody;
 import main.api.responses.SettingsResponseBody;
 import main.api.responses.StatisticResponseBody;
 import main.api.responses.TagsResponseBody;
-import main.model.GlobalSettings;
-import main.model.Post;
-import main.model.Tag;
-import main.model.User;
+import main.model.*;
 import main.model.enums.ModerationStatus;
+import main.repositories.GlobalSettingsRepository;
+import main.repositories.PostRepository;
 import main.repositories.TagRepository;
 import main.repositories.UserRepository;
 import main.services.bodies.TagsBody;
 import main.services.interfaces.GeneralService;
 import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +37,12 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    PostRepository postRepository;
+
+    @Autowired
+    GlobalSettingsRepository globalSettingsRepository;
 
     @Override
     public TagsResponseBody getTags(String query) {
@@ -137,44 +143,6 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         return null;
     }
 
-//    @Override
-//    @Transactional
-//    public SettingsResponseBody putSettings(SettingsResponseBody settingsResponseBody)
-//    {
-//        String value = "NO";
-//        HashMap<String, Boolean> codes = new HashMap<>();
-//        codes.put("MULTIUSER_MODE", settingsResponseBody.isMULTIUSER_MODE());
-//        codes.put("POST_PREMODERATION", settingsResponseBody.isPOST_PREMODERATION());
-//        codes.put("STATISTICS_IS_PUBLIC", settingsResponseBody.isSTATISTICS_IS_PUBLIC());
-//
-//        if (AuthServiceImpl.isUserAuthorize()) {
-//            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
-//            if (user.getIsModerator() == 1) {
-//                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
-//                    if (code.getValue())
-//                        value = "YES";
-//                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
-//                    updateSettings.setParameter("code", code.getKey());
-//                    updateSettings.setParameter("value", value);
-//                }
-//            }
-//            return settingsResponseBody;
-//        }
-//        return null;
-//    }
-
-    @Override
-    public ResponseEntity<StatisticResponseBody> getMyStatistics()
-    {
-        //User user = userRepository.findById(userId);
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<StatisticResponseBody> getAllStatistics() {
-        return null;
-    }
-
     @Override
     @Transactional
     public SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
@@ -203,5 +171,60 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
             }
         }
         return null;
+    }
+
+//    @Override
+//    @Transactional
+//    public SettingsResponseBody putSettings(SettingsResponseBody settingsResponseBody)
+//    {
+//        String value = "NO";
+//        HashMap<String, Boolean> codes = new HashMap<>();
+//        codes.put("MULTIUSER_MODE", settingsResponseBody.isMULTIUSER_MODE());
+//        codes.put("POST_PREMODERATION", settingsResponseBody.isPOST_PREMODERATION());
+//        codes.put("STATISTICS_IS_PUBLIC", settingsResponseBody.isSTATISTICS_IS_PUBLIC());
+//
+//        if (AuthServiceImpl.isUserAuthorize()) {
+//            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+//            if (user.getIsModerator() == 1) {
+//                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
+//                    if (code.getValue())
+//                        value = "YES";
+//                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
+//                    updateSettings.setParameter("code", code.getKey());
+//                    updateSettings.setParameter("value", value);
+//                }
+//            }
+//            return settingsResponseBody;
+//        }
+//        return null;
+//    }
+
+    @Override
+    public StatisticResponseBody getMyStatistics()
+    {
+        List<Post> posts = null;
+
+        if (AuthServiceImpl.isUserAuthorize()) {
+            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            Query allPosts = entityManager.createQuery(postsSelect.concat(" AND p.user = " + user.getId() + " ORDER BY p.time ASC"));
+            allPosts.setParameter("dateNow", LocalDateTime.now());
+            posts = allPosts.getResultList();
+        }
+        return createResponse(posts);
+    }
+
+    @Override
+    public ResponseEntity<StatisticResponseBody> getAllStatistics()
+    {
+        GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
+
+        if (settings.getValue().equals("YES") || AuthServiceImpl.isUserAuthorize()) {
+            Query allPosts = entityManager.createQuery(postsSelect.concat(" ORDER BY p.time ASC"));
+            allPosts.setParameter("dateNow", LocalDateTime.now());
+            List<Post> posts = allPosts.getResultList();
+
+            return new ResponseEntity<>(createResponse(posts), HttpStatus.OK);
+        }
+        else return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 }
