@@ -1,16 +1,13 @@
 package main.services;
 
-import main.api.responses.CalendarResponseBody;
-import main.api.responses.SettingsResponseBody;
-import main.api.responses.StatisticResponseBody;
-import main.api.responses.TagsResponseBody;
+import main.api.requests.ApiRequestBody;
+import main.api.responses.*;
 import main.model.*;
 import main.model.enums.ModerationStatus;
-import main.repositories.GlobalSettingsRepository;
-import main.repositories.PostRepository;
-import main.repositories.TagRepository;
-import main.repositories.UserRepository;
+import main.repositories.*;
+import main.services.bodies.ErrorsBody;
 import main.services.bodies.TagsBody;
+import main.services.interfaces.AuthService;
 import main.services.interfaces.GeneralService;
 import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +37,12 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 
     @Autowired
     PostRepository postRepository;
+
+    @Autowired
+    PostCommentRepository postCommentRepository;
+
+    @Autowired
+    AuthService authService;
 
     @Autowired
     GlobalSettingsRepository globalSettingsRepository;
@@ -115,9 +118,9 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         boolean POST_PREMODERATION = false;
         boolean STATISTICS_IS_PUBLIC = false;
 
-        if (AuthServiceImpl.isUserAuthorize())
+        if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            User user = userRepository.findById(authService.getAuthorizedUserId());
             if (user.getIsModerator() == 1)
             {
                 Query settings = entityManager.createQuery("FROM GlobalSettings s");
@@ -153,8 +156,8 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         codes.put("POST_PREMODERATION", POST_PREMODERATION);
         codes.put("STATISTICS_IS_PUBLIC", STATISTICS_IS_PUBLIC);
 
-        if (AuthServiceImpl.isUserAuthorize()) {
-            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+        if (authService.isUserAuthorize()) {
+            User user = userRepository.findById(authService.getAuthorizedUserId());
             if (user.getIsModerator() == 1) {
                 for (Map.Entry<String, Boolean> code : codes.entrySet()) {
                     if (code.getValue())
@@ -162,9 +165,6 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
                     Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
                     updateSettings.setParameter("code", code.getKey());
                     updateSettings.setParameter("value", value);
-
-                    System.out.println(updateSettings.toString());
-
                     updateSettings.executeUpdate();
                 }
                 return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
@@ -173,44 +173,18 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         return null;
     }
 
-//    @Override
-//    @Transactional
-//    public SettingsResponseBody putSettings(SettingsResponseBody settingsResponseBody)
-//    {
-//        String value = "NO";
-//        HashMap<String, Boolean> codes = new HashMap<>();
-//        codes.put("MULTIUSER_MODE", settingsResponseBody.isMULTIUSER_MODE());
-//        codes.put("POST_PREMODERATION", settingsResponseBody.isPOST_PREMODERATION());
-//        codes.put("STATISTICS_IS_PUBLIC", settingsResponseBody.isSTATISTICS_IS_PUBLIC());
-//
-//        if (AuthServiceImpl.isUserAuthorize()) {
-//            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
-//            if (user.getIsModerator() == 1) {
-//                for (Map.Entry<String, Boolean> code : codes.entrySet()) {
-//                    if (code.getValue())
-//                        value = "YES";
-//                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
-//                    updateSettings.setParameter("code", code.getKey());
-//                    updateSettings.setParameter("value", value);
-//                }
-//            }
-//            return settingsResponseBody;
-//        }
-//        return null;
-//    }
-
     @Override
     public StatisticResponseBody getMyStatistics()
     {
         List<Post> posts = null;
 
-        if (AuthServiceImpl.isUserAuthorize()) {
-            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+        if (authService.isUserAuthorize()) {
+            User user = userRepository.findById(authService.getAuthorizedUserId());
             Query allPosts = entityManager.createQuery(postsSelect.concat(" AND p.user = " + user.getId() + " ORDER BY p.time ASC"));
             allPosts.setParameter("dateNow", LocalDateTime.now());
             posts = allPosts.getResultList();
         }
-        return createResponse(posts);
+        return createStatisticResponseBody(posts);
     }
 
     @Override
@@ -218,13 +192,48 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     {
         GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
 
-        if (settings.getValue().equals("YES") || AuthServiceImpl.isUserAuthorize()) {
+        if (settings.getValue().equals("YES") || authService.isUserAuthorize()) {
             Query allPosts = entityManager.createQuery(postsSelect.concat(" ORDER BY p.time ASC"));
             allPosts.setParameter("dateNow", LocalDateTime.now());
             List<Post> posts = allPosts.getResultList();
 
-            return new ResponseEntity<>(createResponse(posts), HttpStatus.OK);
+            return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
         }
+
         else return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Override
+    public ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment)
+    {
+        if (!authService.isUserAuthorize())
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        Post post = postRepository.findById(comment.getPost_id());
+        User user = userRepository.findById(authService.getAuthorizedUserId());
+
+        if (comment.getParent_id() != null) {
+            Optional<PostComment> postComment = postCommentRepository.findById(comment.getParent_id());
+            if (postComment.isEmpty())
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        if (post == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        if (comment.getText().length() < 10) {
+            ApiResponseBody responseBody = ApiResponseBody.builder().result(false)
+                    .errors(ErrorsBody.builder().text("Текст комментария не задан или слишком короткий")
+                            .build()).build();
+            return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        }
+
+        PostComment postComment = postCommentRepository.save(PostComment.builder().parentId(comment.getParent_id())
+                .post(post).user(user).time(LocalDateTime.now()).text(comment.getText()).build());
+
+        //Может, должен быть такой формат ответа, а не только с id? Потому что никак не получается сделать без result
+        // потому что boolean не может быть null. А фронт нормально воспринимает такой ответ.
+
+        return new ResponseEntity<>(ApiResponseBody.builder().id(postComment.getId()).result(true).build(), HttpStatus.OK);
     }
 }

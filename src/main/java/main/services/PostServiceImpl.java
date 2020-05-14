@@ -1,28 +1,31 @@
 package main.services;
 
+import javassist.expr.NewArray;
+import liquibase.pro.packaged.N;
 import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.*;
 import main.model.enums.ModerationStatus;
-import main.repositories.PostRepository;
-import main.repositories.PostVoteRepository;
-import main.repositories.TagRepository;
-import main.repositories.UserRepository;
+import main.repositories.*;
 import main.services.bodies.CommentBody;
+import main.services.bodies.ErrorsBody;
 import main.services.bodies.UserBody;
+import main.services.interfaces.AuthService;
 import main.services.interfaces.PostService;
 import main.services.interfaces.QueryService;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static main.model.enums.ModerationStatus.NEW;
 
 @Service
 public class PostServiceImpl implements PostService, QueryService
@@ -38,6 +41,12 @@ public class PostServiceImpl implements PostService, QueryService
 
     @Autowired
     PostVoteRepository postVoteRepository;
+
+    @Autowired
+    TagToPostRepository tagToPostRepository;
+
+    @Autowired
+    AuthService authService;
 
     @PersistenceContext
     EntityManager entityManager;
@@ -151,9 +160,9 @@ public class PostServiceImpl implements PostService, QueryService
         List<Post> postsList = null;
         int count = 0;
 
-        if (AuthServiceImpl.isUserAuthorize())
+        if (authService.isUserAuthorize())
         {
-            int userId = AuthServiceImpl.getAuthorizedUserId();
+            int userId = authService.getAuthorizedUserId();
             Query allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
                     "AND p.moderationStatus = '" + status + "' AND p.moderatorId = " + userId);
             count = allPosts.getResultList().size();
@@ -182,14 +191,14 @@ public class PostServiceImpl implements PostService, QueryService
         Query allPosts = null;
         int count = 0;
 
-        if (AuthServiceImpl.isUserAuthorize()) {
-            int userId = AuthServiceImpl.getAuthorizedUserId();
+        if (authService.isUserAuthorize()) {
+            int userId = authService.getAuthorizedUserId();
             if (status.equals("inactive")) {
                 allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 0 AND p.user = " + userId);
             }
             else {
                 if (status.equals("pending"))
-                    status = ModerationStatus.NEW.toString();
+                    status = NEW.toString();
                 if (status.equals("published"))
                     status = ModerationStatus.ACCEPTED.toString();
                 if (status.equals("declined"))
@@ -208,9 +217,9 @@ public class PostServiceImpl implements PostService, QueryService
     @Override
     public ApiResponseBody postLike(int postId)
     {
-        if (AuthServiceImpl.isUserAuthorize())
+        if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            User user = userRepository.findById(authService.getAuthorizedUserId());
             Post post = postRepository.findById(postId);
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
 
@@ -228,9 +237,9 @@ public class PostServiceImpl implements PostService, QueryService
 
     @Override
     public ApiResponseBody postDislike(int postId) {
-        if (AuthServiceImpl.isUserAuthorize())
+        if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(AuthServiceImpl.getAuthorizedUserId());
+            User user = userRepository.findById(authService.getAuthorizedUserId());
             Post post = postRepository.findById(postId);
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
 
@@ -244,5 +253,79 @@ public class PostServiceImpl implements PostService, QueryService
             postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(1).build());
         }
         return ApiResponseBody.builder().result(true).build();
+    }
+
+    @Transactional
+    @Override
+    public ApiResponseBody addPost(PostResponseBody post)
+    {
+        if (authService.isUserAuthorize()) {
+            User user = userRepository.findById(authService.getAuthorizedUserId());
+            if (isTitleAndTextCorrect(post))
+                return errorResponse();
+
+            else
+            {
+                Post newPost = postRepository.save(Post.builder().isActive(post.getActive())
+                        .user(user).time(setTime(post.getTime())).text(post.getText()).title(post.getTitle())
+                        .viewCount(0).moderationStatus(NEW).build());
+
+                List<String> tags = post.getTags();
+                if (tags.size() > 0)
+                    updateTagsTables(tags, newPost.getId());
+            }
+            return ApiResponseBody.builder().result(true).build();
+        }
+        return null;
+    }
+
+    @Transactional
+    @Override
+    public ApiResponseBody editPost(int id, PostResponseBody postResponseBody)
+    {
+        if (authService.isUserAuthorize())
+        {
+            Post post = postRepository.findById(id);
+            User user = userRepository.findById(authService.getAuthorizedUserId());
+            ModerationStatus status = post.getModerationStatus();
+
+            if (user.getIsModerator() == 0 || user.getId() != post.getModeratorId())
+                status = NEW;
+
+            if (isTitleAndTextCorrect(postResponseBody))
+                return errorResponse();
+
+            else {
+                Query updatePost = entityManager.createQuery("UPDATE Post SET isActive = :is_active, " +
+                        "moderationStatus = :status, " + "time = :time, " + "title = :title, " + "text = :text " +
+                        "WHERE id = " + id);
+
+                updatePost.setParameter("is_active", postResponseBody.getActive());
+                updatePost.setParameter("status", status);
+                updatePost.setParameter("time", setTime(postResponseBody.getTime()));
+                updatePost.setParameter("title", postResponseBody.getTitle());
+                updatePost.setParameter("text", postResponseBody.getText());
+                updatePost.executeUpdate();
+
+                List<String> newTags = postResponseBody.getTags();
+                tagToPostRepository.deleteByPostId(id);
+
+                if (newTags.size() > 0)
+                    updateTagsTables(newTags, id);
+            }
+            return ApiResponseBody.builder().result(true).build();
+        }
+        return null;
+    }
+
+    private void updateTagsTables (List<String> tags, int postId)
+    {
+        for (String tagName : tags) {
+            Tag tag = tagRepository.findByName(tagName);
+            if (tag == null)
+                tagRepository.save(new Tag(tagName));
+            int tagId = tagRepository.findByName(tagName).getId();
+            tagToPostRepository.save(TagToPost.builder().postId(postId).tagId(tagId).build());
+        }
     }
 }

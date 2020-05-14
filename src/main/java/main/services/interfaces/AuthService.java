@@ -3,9 +3,12 @@ package main.services.interfaces;
 import main.api.responses.AuthResponseBody;
 import main.model.User;
 import main.services.bodies.UserBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.servlet.http.HttpSession;
 import java.util.concurrent.ConcurrentHashMap;
 
 public interface AuthService
@@ -47,5 +50,23 @@ public interface AuthService
                 .moderation(moderationStatus)
                 .moderationCount(moderationCount)
                 .settings(moderationStatus).build();
+    }
+
+    default HttpSession getSession()
+    {
+        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attr.getRequest().getSession(true); // true == allow create
+    }
+
+    default boolean isUserAuthorize()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.containsKey(sessionId);
+    }
+
+    default int getAuthorizedUserId()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.get(sessionId);
     }
 }

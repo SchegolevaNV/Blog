@@ -1,6 +1,5 @@
 package main.controller;
 
-
 import main.api.requests.ApiRequestBody;
 import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
@@ -51,7 +50,7 @@ public class ApiPostController
         return postService.getPostsByTag(offset, limit, tag);
     }
 
-    @GetMapping(value = "moderation")
+    @GetMapping("moderation")
     public PostWallResponseBody getPostsModerationStatus (int offset, int limit, String  status)
     {
         return postService.getPostsForModeration(offset, limit, status);
@@ -74,4 +73,13 @@ public class ApiPostController
     {
         return postService.postDislike(body.getPost_id());
     }
+
+    @PostMapping("")
+    public ApiResponseBody addPost(@RequestBody PostResponseBody post)
+    {
+        return postService.addPost(post);
+    }
+
+    @PutMapping("{id}")
+    public ApiResponseBody editPost (@PathVariable("id") int id, @RequestBody PostResponseBody post) {return postService.editPost(id, post);}
 }

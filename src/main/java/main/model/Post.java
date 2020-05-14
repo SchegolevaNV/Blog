@@ -1,7 +1,6 @@
 package main.model;
 
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 import main.model.enums.ModerationStatus;
 
 import javax.persistence.*;
@@ -9,10 +8,10 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import lombok.Data;
-
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "posts")
 public class Post
@@ -27,7 +26,7 @@ public class Post
 
     @Enumerated(EnumType.STRING)
     @NotNull
-    @Column(name = "moderation_status", columnDefinition = "moderation_status DEFAULT 'NEW'")
+    @Column(name = "moderation_status", columnDefinition = "DEFAULT 'NEW'")
     private ModerationStatus moderationStatus;
 
     @Column(name = "moderator_id")

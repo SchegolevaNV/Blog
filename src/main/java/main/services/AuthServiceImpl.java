@@ -6,8 +6,6 @@ import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -73,24 +71,6 @@ public class AuthServiceImpl implements AuthService
     @Override
     public AuthResponseBody signIn(String email, String name, String password, String captcha, String captcha_secret) {
         return null;
-    }
-
-    private static HttpSession getSession()
-    {
-        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-        return attr.getRequest().getSession(true); // true == allow create
-    }
-
-    public static boolean isUserAuthorize()
-    {
-        String sessionId = getSession().getId();
-        return activeSessions.containsKey(sessionId);
-    }
-
-    public static int getAuthorizedUserId()
-    {
-        String sessionId = getSession().getId();
-        return activeSessions.get(sessionId);
     }
 }
 

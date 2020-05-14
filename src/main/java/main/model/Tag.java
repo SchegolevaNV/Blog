@@ -1,12 +1,13 @@
 package main.model;
-
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "tags")
 public class Tag
@@ -23,4 +24,8 @@ public class Tag
             joinColumns = {@JoinColumn(name = "tag_id")},
             inverseJoinColumns = {@JoinColumn(name = "post_id")})
     private List<Post> tagsPosts;
+
+    public Tag(@NotNull String name) {
+        this.name = name;
+    }
 }

@@ -1,9 +1,7 @@
 package main.services.interfaces;
 
-import main.api.responses.CalendarResponseBody;
-import main.api.responses.SettingsResponseBody;
-import main.api.responses.StatisticResponseBody;
-import main.api.responses.TagsResponseBody;
+import main.api.requests.ApiRequestBody;
+import main.api.responses.*;
 import main.model.Post;
 import main.services.PostServiceImpl;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +16,9 @@ public interface GeneralService
     SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC);
     StatisticResponseBody getMyStatistics();
     ResponseEntity<StatisticResponseBody> getAllStatistics();
+    ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
 
-    default StatisticResponseBody createResponse (List<Post> posts)
+    default StatisticResponseBody createStatisticResponseBody(List<Post> posts)
     {
         int likesCount = 0;
         int dislikesCount = 0;

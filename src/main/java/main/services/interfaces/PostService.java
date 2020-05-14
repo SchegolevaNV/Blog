@@ -5,19 +5,21 @@ import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
 import main.model.enums.ModeValue;
+import main.services.bodies.ErrorsBody;
 import main.services.bodies.UserBody;
 import main.services.comparators.CommentPostComparator;
 import main.services.comparators.DatePostComparator;
 import main.services.comparators.LikePostComparator;
 
 import javax.persistence.Query;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public interface PostService
 {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy, EEEE, HH:mm");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     PostWallResponseBody getAllPosts(int offset, int limit, String mode);
     PostWallResponseBody searchPosts(int offset, int limit, String query);
@@ -28,6 +30,8 @@ public interface PostService
     PostWallResponseBody getMyPosts(int offset, int limit, String status);
     ApiResponseBody postLike(int id);
     ApiResponseBody postDislike (int id);
+    ApiResponseBody addPost (PostResponseBody post);
+    ApiResponseBody editPost (int id, PostResponseBody postResponseBody);
 
     /** default methods*/
 
@@ -84,5 +88,27 @@ public interface PostService
         query.setMaxResults(limit);
 
         return query;
+    }
+
+    default boolean isTitleAndTextCorrect(PostResponseBody postResponseBody)
+    {
+        return postResponseBody.getTitle() == null || postResponseBody.getText() == null
+            || postResponseBody.getTitle().length() < 3 || postResponseBody.getText().length() < 10;
+    }
+
+    default LocalDateTime setTime (String time)
+    {
+        LocalDateTime newTime = LocalDateTime.parse(time, formatter);
+        return (newTime.isBefore(LocalDateTime.now())) ? LocalDateTime.now() : newTime;
+    }
+
+    default ApiResponseBody errorResponse ()
+    {
+        ErrorsBody error = ErrorsBody.builder()
+                .title("Заголовок не установлен или короткий")
+                .text("Текст публикации не установлен или слишком короткий")
+                .build();
+
+        return ApiResponseBody.builder().result(false).errors(error).build();
     }
 }

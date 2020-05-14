@@ -14,6 +14,7 @@ import java.util.List;
 public class PostResponseBody
 {
     private int id;
+    private byte active;
     private String time;
     private UserBody user;
     private String title;

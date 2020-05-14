@@ -63,8 +63,8 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: moderation_status
-                  type: moderation_status
-                  defaultValue: NEW
+                  type: varchar(255)
+                  defaultValue: "NEW"
                   constraints:
                     nullable: false
               - column:
