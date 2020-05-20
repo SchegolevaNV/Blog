@@ -8,6 +8,7 @@ import main.services.interfaces.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -51,7 +52,7 @@ public class ApiPostController
     }
 
     @GetMapping("moderation")
-    public PostWallResponseBody getPostsModerationStatus (int offset, int limit, String  status)
+    public ResponseEntity<PostWallResponseBody> getPostsModerationStatus (int offset, int limit, String  status)
     {
         return postService.getPostsForModeration(offset, limit, status);
     }

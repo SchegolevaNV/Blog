@@ -4,12 +4,9 @@ import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
-import main.model.enums.ModeValue;
 import main.services.bodies.ErrorsBody;
 import main.services.bodies.UserBody;
-import main.services.comparators.CommentPostComparator;
-import main.services.comparators.DatePostComparator;
-import main.services.comparators.LikePostComparator;
+import org.springframework.http.ResponseEntity;
 
 import javax.persistence.Query;
 import java.time.LocalDateTime;
@@ -26,7 +23,7 @@ public interface PostService
     PostWallResponseBody getPostsByDate(int offset, int limit, String date);
     PostResponseBody getPostById(int id);
     PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
-    PostWallResponseBody getPostsForModeration(int offset, int limit, String status);
+    ResponseEntity<PostWallResponseBody> getPostsForModeration(int offset, int limit, String status);
     PostWallResponseBody getMyPosts(int offset, int limit, String status);
     ApiResponseBody postLike(int id);
     ApiResponseBody postDislike (int id);
@@ -34,20 +31,6 @@ public interface PostService
     ApiResponseBody editPost (int id, PostResponseBody postResponseBody);
 
     /** default methods*/
-
-    default List<Post> sortPosts(List<Post> posts, String mode)
-    {
-            if (mode.equals(ModeValue.popular.toString()))
-                posts.sort(new CommentPostComparator());
-            else if (mode.equals(ModeValue.best.toString()))
-                posts.sort(new LikePostComparator());
-            else if (mode.equals(ModeValue.recent.toString()))
-                posts.sort(new DatePostComparator());
-            else
-                posts.sort(new DatePostComparator().reversed());
-
-            return posts;
-    }
 
     default List<PostResponseBody> getListPostBodies(List<Post> posts)
     {

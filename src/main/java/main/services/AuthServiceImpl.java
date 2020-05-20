@@ -2,23 +2,27 @@ package main.services;
 
 import main.api.responses.AuthResponseBody;
 import main.model.User;
+import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpSession;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthServiceImpl implements AuthService
 {
-    @PersistenceContext
-    EntityManager entityManager;
+    private ConcurrentHashMap<String, Integer> activeSessions = new ConcurrentHashMap<>();
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    PostRepository postRepository;
 
     @Override
     public AuthResponseBody login (String email, String password)
@@ -32,7 +36,7 @@ public class AuthServiceImpl implements AuthService
         }
         else return getFalseResult();
 
-        return AuthResponseBody.builder().result(true).user(getUserBody(user, entityManager)).build();
+        return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
     }
 
     @Override
@@ -45,7 +49,7 @@ public class AuthServiceImpl implements AuthService
             int userId = activeSessions.get(sessionId);
             User user = userRepository.findById(userId);
 
-            return AuthResponseBody.builder().result(true).user(getUserBody(user, entityManager)).build();
+            return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
         }
         else
             return getFalseResult();
@@ -71,6 +75,24 @@ public class AuthServiceImpl implements AuthService
     @Override
     public AuthResponseBody signIn(String email, String name, String password, String captcha, String captcha_secret) {
         return null;
+    }
+
+    public HttpSession getSession()
+    {
+        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        return attr.getRequest().getSession(true); // true == allow create
+    }
+
+    public boolean isUserAuthorize()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.containsKey(sessionId);
+    }
+
+    public int getAuthorizedUserId()
+    {
+        String sessionId = getSession().getId();
+        return activeSessions.get(sessionId);
     }
 }
 

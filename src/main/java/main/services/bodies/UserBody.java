@@ -12,7 +12,7 @@ public class UserBody {
     private String name;
     private String photo;
     private String email;
-    private boolean moderation;
-    private long moderationCount;
-    private boolean settings;
+    private Boolean moderation;
+    private Integer moderationCount;
+    private Boolean settings;
 }

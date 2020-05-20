@@ -3,6 +3,7 @@ package main.services;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.model.*;
+import main.model.enums.Errors;
 import main.model.enums.ModerationStatus;
 import main.repositories.*;
 import main.services.bodies.ErrorsBody;
@@ -123,8 +124,7 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
             User user = userRepository.findById(authService.getAuthorizedUserId());
             if (user.getIsModerator() == 1)
             {
-                Query settings = entityManager.createQuery("FROM GlobalSettings s");
-                List<GlobalSettings> globalSettings = settings.getResultList();
+                List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
 
                 for (GlobalSettings mySettings : globalSettings)
                 {
@@ -162,10 +162,10 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
                 for (Map.Entry<String, Boolean> code : codes.entrySet()) {
                     if (code.getValue())
                         value = "YES";
-                    Query updateSettings = entityManager.createQuery("UPDATE GlobalSettings SET value = :value WHERE code = :code");
-                    updateSettings.setParameter("code", code.getKey());
-                    updateSettings.setParameter("value", value);
-                    updateSettings.executeUpdate();
+
+                    GlobalSettings settings = globalSettingsRepository.findByCode(code.getKey());
+                    settings.setValue(value);
+                    globalSettingsRepository.save(settings);
                 }
                 return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
             }
@@ -223,17 +223,24 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 
         if (comment.getText().length() < 10) {
             ApiResponseBody responseBody = ApiResponseBody.builder().result(false)
-                    .errors(ErrorsBody.builder().text("Текст комментария не задан или слишком короткий")
+                    .errors(ErrorsBody.builder().text(Errors.CommentIsEmptyOrShort.getTitle())
                             .build()).build();
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         }
 
         PostComment postComment = postCommentRepository.save(PostComment.builder().parentId(comment.getParent_id())
                 .post(post).user(user).time(LocalDateTime.now()).text(comment.getText()).build());
-
-        //Может, должен быть такой формат ответа, а не только с id? Потому что никак не получается сделать без result
-        // потому что boolean не может быть null. А фронт нормально воспринимает такой ответ.
-
         return new ResponseEntity<>(ApiResponseBody.builder().id(postComment.getId()).result(true).build(), HttpStatus.OK);
+    }
+
+    @Override
+    public ApiResponseBody editProfile() {
+
+        return null;
+    }
+
+    @Override
+    public ApiResponseBody moderation(ApiRequestBody post) {
+        return null;
     }
 }

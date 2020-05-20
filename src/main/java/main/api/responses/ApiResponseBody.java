@@ -11,6 +11,6 @@ import main.services.bodies.ErrorsBody;
 public class ApiResponseBody
 {
     private Integer id;
-    private boolean result;
+    private Boolean result;
     private ErrorsBody errors;
 }

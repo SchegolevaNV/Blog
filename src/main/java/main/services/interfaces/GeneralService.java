@@ -17,6 +17,8 @@ public interface GeneralService
     StatisticResponseBody getMyStatistics();
     ResponseEntity<StatisticResponseBody> getAllStatistics();
     ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
+    ApiResponseBody editProfile();
+    ApiResponseBody moderation(ApiRequestBody post);
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts)
     {
