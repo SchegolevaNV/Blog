@@ -34,7 +34,7 @@ public interface AuthService
     default UserBody getUserBody(User user, PostRepository postRepository)
     {
         boolean moderationStatus = false;
-        int moderationCount = postRepository.getTotalNewAndActivePosts((byte) 1, ModerationStatus.NEW);
+        int moderationCount = postRepository.getPostsCountByActiveAndModStatus((byte) 1, ModerationStatus.NEW);
 
         if (user.getIsModerator() == 1) {
             moderationStatus = true;

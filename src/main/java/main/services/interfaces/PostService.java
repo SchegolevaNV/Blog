@@ -8,7 +8,6 @@ import main.services.bodies.ErrorsBody;
 import main.services.bodies.UserBody;
 import org.springframework.http.ResponseEntity;
 
-import javax.persistence.Query;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -24,7 +23,7 @@ public interface PostService
     PostResponseBody getPostById(int id);
     PostWallResponseBody getPostsByTag(int offset, int limit, String tag);
     ResponseEntity<PostWallResponseBody> getPostsForModeration(int offset, int limit, String status);
-    PostWallResponseBody getMyPosts(int offset, int limit, String status);
+    ResponseEntity<PostWallResponseBody> getMyPosts(int offset, int limit, String status);
     ApiResponseBody postLike(int id);
     ApiResponseBody postDislike (int id);
     ApiResponseBody addPost (PostResponseBody post);
@@ -63,14 +62,6 @@ public interface PostService
         } else announce = post.getText();
 
         return announce;
-    }
-
-    default Query setResult(Query query, int offset, int limit)
-    {
-        query.setFirstResult(offset);
-        query.setMaxResults(limit);
-
-        return query;
     }
 
     default boolean isTitleAndTextCorrect(PostResponseBody postResponseBody)

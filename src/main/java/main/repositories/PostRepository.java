@@ -1,8 +1,10 @@
 package main.repositories;
 
 import main.model.Post;
+import main.model.User;
 import main.model.enums.ModerationStatus;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -19,7 +21,7 @@ public interface PostRepository extends JpaRepository<Post, Integer>
     //==== get total count ====//
 
     @Query("SELECT COUNT(*) FROM Post p " + partAllPostQuery)
-    int allActivePostsCount(byte isActive, ModerationStatus status, LocalDateTime time);
+    int getPostsCountByActiveAndModStatusAndTime(byte isActive, ModerationStatus status, LocalDateTime time);
 
     @Query("SELECT COUNT(*) FROM Post p " + partAllPostQuery + " AND to_char(p.time,'YYYY-MM-DD') LIKE %?4%")
     int getTotalPostCountByDate(byte isActive, ModerationStatus status, LocalDateTime time, String date);
@@ -28,13 +30,20 @@ public interface PostRepository extends JpaRepository<Post, Integer>
     int getTotalPostCountByQuery(byte isActive, ModerationStatus status,LocalDateTime time, String query);
 
     @Query("SELECT COUNT(*) FROM Post p WHERE p.isActive = ?1 AND p.moderationStatus = ?2")
-    int getTotalNewAndActivePosts(byte isActive, ModerationStatus status);
+    int getPostsCountByActiveAndModStatus(byte isActive, ModerationStatus status);
 
     @Query("SELECT COUNT(*) FROM Post p WHERE p.isActive = ?1 AND p.moderationStatus = ?2 AND p.moderatorId = ?3")
     int getTotalPostsByModerator(byte isActive, ModerationStatus status, int userId);
 
     @Query("SELECT COUNT(*) FROM Post p WHERE p.isActive = 0 AND p.user = ?1")
-    int getTotalInactivePostsByUser();
+    int getTotalInactivePostsByUser(User user);
+
+    @Query("SELECT COUNT(*) FROM Post p WHERE p.isActive = ?1 AND p.moderationStatus = ?2 AND p.user = ?3")
+    int getTotalPostsCountByUser(byte isActive, ModerationStatus status, User user);
+
+    @Query("SELECT COUNT(*), to_char(p.time,'YYYY-MM-DD') AS date FROM Post p " + partAllPostQuery +
+            " AND YEAR(p.time) = ?4 GROUP BY date")
+    List<Object[]> getPostCountInYearGroupByDate(byte isActive, ModerationStatus status, LocalDateTime time, int year);
 
     //=== main page ===//
 
@@ -62,4 +71,16 @@ public interface PostRepository extends JpaRepository<Post, Integer>
 
     @Query("SELECT p FROM Post p " + partAllPostQuery + " AND to_char(p.time,'YYYY-MM-DD') LIKE %?4%")
     List<Post> findPostByDate(byte isActive, ModerationStatus status, LocalDateTime time, String date, Pageable pageable);
+
+    List<Post> findByIsActiveAndUser(byte isActive, User user, Pageable pageable);
+    List<Post> findByIsActiveAndModerationStatusAndUser(byte isActive, ModerationStatus status, User user, Pageable pageable);
+
+    @Query("SELECT YEAR(time) AS years FROM Post p " + partAllPostQuery + " GROUP BY years")
+    List<Integer> getYears(byte isActive, ModerationStatus status, LocalDateTime time);
+
+    @Query("SELECT p FROM Post p " + partAllPostQuery + " AND p.user = ?4")
+    List<Post> findPostsByUser(byte isActive, ModerationStatus status, LocalDateTime time, User user, Sort sort);
+
+    @Query("SELECT p FROM Post p " + partAllPostQuery)
+    List<Post> findSortPosts(byte isActive, ModerationStatus status, LocalDateTime time, Sort sort);
 }

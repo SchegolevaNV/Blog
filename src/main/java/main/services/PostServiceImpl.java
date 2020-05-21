@@ -17,9 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,9 +48,6 @@ public class PostServiceImpl implements PostService, QueryService
     @Autowired
     AuthService authService;
 
-    @PersistenceContext
-    EntityManager entityManager;
-
     public static final byte IS_ACTIVE = 1;
     private static final ModerationStatus MODERATION_STATUS = ModerationStatus.ACCEPTED;
     private final LocalDateTime time = LocalDateTime.now();
@@ -63,7 +57,7 @@ public class PostServiceImpl implements PostService, QueryService
     public PostWallResponseBody getAllPosts (int offset, int limit, String mode)
     {
         List<Post> posts = getAndSortPosts(offset, limit, mode);
-        int count = postRepository.allActivePostsCount(IS_ACTIVE, MODERATION_STATUS, time);
+        int count = postRepository.getPostsCountByActiveAndModStatusAndTime(IS_ACTIVE, MODERATION_STATUS, time);
         return new PostWallResponseBody(count, getListPostBodies(posts));
     }
 
@@ -152,7 +146,7 @@ public class PostServiceImpl implements PostService, QueryService
 
             if (status.equals("NEW")) {
                 posts = postRepository.findByModerationStatusAndIsActive(NEW, IS_ACTIVE, setPageable(offset, limit));
-                count = postRepository.getTotalNewAndActivePosts(IS_ACTIVE, NEW);
+                count = postRepository.getPostsCountByActiveAndModStatus(IS_ACTIVE, NEW);
             }
             else {
                 posts = postRepository.findByModerationStatusAndIsActiveAndModeratorId(ModerationStatus.valueOf(status),
@@ -176,15 +170,19 @@ public class PostServiceImpl implements PostService, QueryService
     }
 
     @Override
-    public PostWallResponseBody getMyPosts(int offset, int limit, String status)
+    public ResponseEntity<PostWallResponseBody> getMyPosts(int offset, int limit, String status)
     {
-        Query allPosts = null;
         int count = 0;
 
-        if (authService.isUserAuthorize()) {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+
             int userId = authService.getAuthorizedUserId();
-            if (status.equals("inactive")) {
-                allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 0 AND p.user = " + userId);
+            User user = userRepository.findById(userId);
+            if (status.equals("inactive"))
+            {
+                posts = postRepository.findByIsActiveAndUser((byte) 0, user, setPageable(offset, limit));
+                count = postRepository.getTotalInactivePostsByUser(user);
             }
             else {
                 if (status.equals("pending"))
@@ -194,14 +192,11 @@ public class PostServiceImpl implements PostService, QueryService
                 if (status.equals("declined"))
                     status = ModerationStatus.DECLINED.toString();
 
-                allPosts = entityManager.createQuery("FROM Post p WHERE p.isActive = 1 " +
-                        "AND p.moderationStatus = '" + status + "' AND p.user = " + userId);
+                posts = postRepository.findByIsActiveAndModerationStatusAndUser(IS_ACTIVE,
+                        ModerationStatus.valueOf(status), user, setPageable(offset, limit));
+                count = postRepository.getTotalPostsCountByUser(IS_ACTIVE, ModerationStatus.valueOf(status), user);
             }
-            count = allPosts.getResultList().size();
-            setResult(allPosts, offset, limit);
-        }
-        List<Post> posts = allPosts.getResultList();
-        return new PostWallResponseBody(count, getListPostBodies(posts));
+        return new ResponseEntity<>(new PostWallResponseBody(count, getListPostBodies(posts)), HttpStatus.OK);
     }
 
     @Override

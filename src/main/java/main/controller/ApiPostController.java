@@ -58,7 +58,7 @@ public class ApiPostController
     }
 
     @GetMapping("my")
-    public PostWallResponseBody getMyPosts (int offset, int limit, String  status)
+    public ResponseEntity<PostWallResponseBody> getMyPosts (int offset, int limit, String  status)
     {
         return postService.getMyPosts(offset, limit, status);
     }

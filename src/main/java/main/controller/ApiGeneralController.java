@@ -54,7 +54,7 @@ public class ApiGeneralController
     }
 
     @GetMapping("statistics/my")
-    public StatisticResponseBody getMyStatistics()
+    public ResponseEntity<StatisticResponseBody> getMyStatistics()
     {
         return generalService.getMyStatistics();
     }

@@ -12,13 +12,10 @@ import main.services.interfaces.AuthService;
 import main.services.interfaces.GeneralService;
 import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,9 +26,6 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 
     @Autowired
     TagRepository tagRepository;
-
-    @PersistenceContext
-    EntityManager entityManager;
 
     @Autowired
     UserRepository userRepository;
@@ -51,20 +45,15 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     @Override
     public TagsResponseBody getTags(String query) {
 
-        Query postsCount = entityManager.createQuery(QueryService.postsCount).setParameter("dateNow", LocalDateTime.now());
-        Long count = (Long) postsCount.getSingleResult();
-
+        int count = postRepository.getPostsCountByActiveAndModStatusAndTime((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
         List<TagsBody> tags = new ArrayList<>();
-
         if (query == null)
             query = "";
 
         List<Tag> tagList = tagRepository.findByNameStartingWith(query);
-
         for (Tag tag : tagList)
         {
             List<Post> posts = tag.getTagsPosts();
-
             posts.removeIf(post -> post.getIsActive() != 1
                     && post.getModerationStatus() != ModerationStatus.ACCEPTED
                     && !post.getTime().isBefore(LocalDateTime.now()));
@@ -72,52 +61,41 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
             double weight = (double) posts.size() / (double) count;
             tags.add(new TagsBody(tag.getName(), weight));
         }
-
         return new TagsResponseBody(tags);
     }
 
     @Override
-    public CalendarResponseBody getCalendar(String year) {
-
-        //TODO переделать метод выборки с groupBy и только года
-
+    public CalendarResponseBody getCalendar(String year)
+    {
         if (year == null
                 || !year.matches("[0-9]{4}")
                 || Integer.parseInt(year) < 2015
                 || Integer.parseInt(year) > LocalDate.now().getYear())
             year = Integer.toString(LocalDate.now().getYear());
 
-        Query allDates = entityManager.createQuery("SELECT time " + postsSelect)
-                .setParameter("dateNow", LocalDateTime.now());
-        List<LocalDateTime> times = allDates.getResultList();
-        times.sort(Comparator.reverseOrder());
+        List<Integer> years = postRepository.getYears((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
+        years.sort(Collections.reverseOrder());
 
-        ArrayList<Integer> years = new ArrayList<>();
-        TreeMap<String, Integer> posts = new TreeMap<>();
+        TreeMap<String, Long> posts = new TreeMap<>();
 
-        for (LocalDateTime time : times) {
+        List<Object[]> postsInYear = postRepository.getPostCountInYearGroupByDate((byte) 1, ModerationStatus.ACCEPTED,
+                LocalDateTime.now(), Integer.parseInt(year));
 
-            int thisYear = time.getYear();
-            if(!years.contains(thisYear))
-                years.add(thisYear);
+        postsInYear.forEach(postInYear -> {
+            String day = postInYear[1].toString();
+            Long count = (Long) postInYear[0];
+            posts.put(day,count);
+        });
 
-            if (Integer.toString(thisYear).equals(year)) {
-                String date = time.toLocalDate().toString();
-                if (!posts.containsKey(date)) {
-                    int postCount = 1;
-                    posts.put(date, postCount);
-                } else posts.replace(date, posts.get(date) + 1);
-            }
-        }
         return new CalendarResponseBody(years, posts);
     }
 
     @Override
     public SettingsResponseBody getSettings()
     {
-        boolean MULTIUSER_MODE = false;
-        boolean POST_PREMODERATION = false;
-        boolean STATISTICS_IS_PUBLIC = false;
+        boolean multiuserMode = false;
+        boolean postPremoderation = false;
+        boolean statisticsIsPublic = false;
 
         if (authService.isUserAuthorize())
         {
@@ -134,13 +112,13 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
                         value = true;
 
                     if (mySettings.getCode().equals("MULTIUSER_MODE"))
-                        MULTIUSER_MODE = value;
+                        multiuserMode = value;
                     if (mySettings.getCode().equals("POST_PREMODERATION"))
-                        POST_PREMODERATION = value;
+                        postPremoderation = value;
                     if (mySettings.getCode().equals("STATISTICS_IS_PUBLIC"))
-                        STATISTICS_IS_PUBLIC = value;
+                        statisticsIsPublic = value;
                 }
-                return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
+                return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
             }
         }
         return null;
@@ -148,13 +126,13 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
 
     @Override
     @Transactional
-    public SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC)
+    public SettingsResponseBody putSettings(boolean multiuserMode, boolean postPremoderation, boolean statisticsIsPublic)
     {
         String value = "NO";
         HashMap<String, Boolean> codes = new HashMap<>();
-        codes.put("MULTIUSER_MODE", MULTIUSER_MODE);
-        codes.put("POST_PREMODERATION", POST_PREMODERATION);
-        codes.put("STATISTICS_IS_PUBLIC", STATISTICS_IS_PUBLIC);
+        codes.put("MULTIUSER_MODE", multiuserMode);
+        codes.put("POST_PREMODERATION", postPremoderation);
+        codes.put("STATISTICS_IS_PUBLIC", statisticsIsPublic);
 
         if (authService.isUserAuthorize()) {
             User user = userRepository.findById(authService.getAuthorizedUserId());
@@ -167,24 +145,23 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
                     settings.setValue(value);
                     globalSettingsRepository.save(settings);
                 }
-                return new SettingsResponseBody(MULTIUSER_MODE, POST_PREMODERATION, STATISTICS_IS_PUBLIC);
+                return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
             }
         }
         return null;
     }
 
     @Override
-    public StatisticResponseBody getMyStatistics()
+    public ResponseEntity<StatisticResponseBody> getMyStatistics()
     {
-        List<Post> posts = null;
-
-        if (authService.isUserAuthorize()) {
+        if (authService.isUserAuthorize())
+        {
             User user = userRepository.findById(authService.getAuthorizedUserId());
-            Query allPosts = entityManager.createQuery(postsSelect.concat(" AND p.user = " + user.getId() + " ORDER BY p.time ASC"));
-            allPosts.setParameter("dateNow", LocalDateTime.now());
-            posts = allPosts.getResultList();
+            List<Post> posts = postRepository.findPostsByUser((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
+                    user, Sort.by("time"));
+            return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
         }
-        return createStatisticResponseBody(posts);
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @Override
@@ -192,15 +169,15 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     {
         GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
 
-        if (settings.getValue().equals("YES") || authService.isUserAuthorize()) {
-            Query allPosts = entityManager.createQuery(postsSelect.concat(" ORDER BY p.time ASC"));
-            allPosts.setParameter("dateNow", LocalDateTime.now());
-            List<Post> posts = allPosts.getResultList();
+        if (!settings.getValue().equals("YES"))
+            return new ResponseEntity("Statistic is restricted", HttpStatus.BAD_REQUEST);
 
-            return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
-        }
+        if(!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 
-        else return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        List<Post> posts = postRepository.findSortPosts((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
+                Sort.by("time"));
+        return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
     }
 
     @Override
