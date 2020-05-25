@@ -11,7 +11,6 @@ import main.services.bodies.CommentBody;
 import main.services.bodies.UserBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.PostService;
-import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +27,7 @@ import java.util.List;
 import static main.model.enums.ModerationStatus.NEW;
 
 @Service
-public class PostServiceImpl implements PostService, QueryService
+public class PostServiceImpl implements PostService
 {
     @Autowired
     PostRepository postRepository;
@@ -208,8 +207,7 @@ public class PostServiceImpl implements PostService, QueryService
             Post post = postRepository.findById(postId);
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
 
-            if (postVote != null)
-            {
+            if (postVote != null) {
                 if (postVote.getValue() == 1) {
                     return ApiResponseBody.builder().result(false).build();
                 }
@@ -235,7 +233,7 @@ public class PostServiceImpl implements PostService, QueryService
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
-            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(1).build());
+            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(0).build());
         }
         return ApiResponseBody.builder().result(true).build();
     }

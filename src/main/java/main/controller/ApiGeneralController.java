@@ -70,4 +70,10 @@ public class ApiGeneralController
     {
         return generalService.addComment(comment);
     }
+
+    @PostMapping("moderation")
+    public ResponseEntity<ApiResponseBody> moderation(@RequestBody ApiRequestBody requestBody)
+    {
+        return generalService.moderation(requestBody);
+    }
 }

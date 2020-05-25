@@ -1,5 +1,6 @@
 package main.services.interfaces;
 
+import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
 import main.model.User;
 import main.model.enums.ModerationStatus;
@@ -14,8 +15,8 @@ public interface AuthService
     AuthResponseBody checkAuth();
     AuthResponseBody logout();
     AuthResponseBody restorePassword(String email);
-    AuthResponseBody changePassword(String code, String password, String captcha, String captcha_secret);
-    AuthResponseBody signIn(String email, String name, String password, String captcha, String captcha_secret);
+    AuthResponseBody changePassword(AuthRequestBody requestBody);
+    AuthResponseBody signIn(AuthRequestBody requestBody);
 
     HttpSession getSession();
     boolean isUserAuthorize();

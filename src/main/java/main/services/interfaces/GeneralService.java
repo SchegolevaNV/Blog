@@ -4,6 +4,7 @@ import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.model.Post;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,8 +17,9 @@ public interface GeneralService
     ResponseEntity<StatisticResponseBody> getMyStatistics();
     ResponseEntity<StatisticResponseBody> getAllStatistics();
     ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
+    ResponseEntity<ApiResponseBody> moderation(ApiRequestBody requestBody);
     ApiResponseBody editProfile();
-    ApiResponseBody moderation(ApiRequestBody post);
+    String imageUpload(MultipartFile file);
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts)
     {

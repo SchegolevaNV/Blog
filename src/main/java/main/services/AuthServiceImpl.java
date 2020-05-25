@@ -1,5 +1,6 @@
 package main.services;
 
+import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
 import main.model.User;
 import main.repositories.PostRepository;
@@ -68,12 +69,12 @@ public class AuthServiceImpl implements AuthService
     }
 
     @Override
-    public AuthResponseBody changePassword(String code, String password, String captcha, String captcha_secret) {
+    public AuthResponseBody changePassword(AuthRequestBody requestBody) {
         return null;
     }
 
     @Override
-    public AuthResponseBody signIn(String email, String name, String password, String captcha, String captcha_secret) {
+    public AuthResponseBody signIn(AuthRequestBody requestBody) {
         return null;
     }
 

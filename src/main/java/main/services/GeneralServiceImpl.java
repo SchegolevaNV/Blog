@@ -1,5 +1,6 @@
 package main.services;
 
+import com.github.cage.Cage;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.model.*;
@@ -10,19 +11,20 @@ import main.services.bodies.ErrorsBody;
 import main.services.bodies.TagsBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.GeneralService;
-import main.services.interfaces.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class GeneralServiceImpl implements GeneralService, QueryService {
+public class GeneralServiceImpl implements GeneralService {
 
     @Autowired
     TagRepository tagRepository;
@@ -74,7 +76,6 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
             year = Integer.toString(LocalDate.now().getYear());
 
         List<Integer> years = postRepository.getYears((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
-        years.sort(Collections.reverseOrder());
 
         TreeMap<String, Long> posts = new TreeMap<>();
 
@@ -97,31 +98,23 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
         boolean postPremoderation = false;
         boolean statisticsIsPublic = false;
 
-        if (authService.isUserAuthorize())
+        List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+
+        for (GlobalSettings mySettings : globalSettings)
         {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
-            if (user.getIsModerator() == 1)
-            {
-                List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
+            boolean value = false;
 
-                for (GlobalSettings mySettings : globalSettings)
-                {
-                    boolean value = false;
+            if (mySettings.getValue().equals("YES"))
+                value = true;
 
-                    if (mySettings.getValue().equals("YES"))
-                        value = true;
-
-                    if (mySettings.getCode().equals("MULTIUSER_MODE"))
-                        multiuserMode = value;
-                    if (mySettings.getCode().equals("POST_PREMODERATION"))
-                        postPremoderation = value;
-                    if (mySettings.getCode().equals("STATISTICS_IS_PUBLIC"))
-                        statisticsIsPublic = value;
-                }
-                return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
-            }
+            if (mySettings.getCode().equals("MULTIUSER_MODE"))
+                multiuserMode = value;
+            if (mySettings.getCode().equals("POST_PREMODERATION"))
+                postPremoderation = value;
+            if (mySettings.getCode().equals("STATISTICS_IS_PUBLIC"))
+                statisticsIsPublic = value;
         }
-        return null;
+        return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
     }
 
     @Override
@@ -169,10 +162,7 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     {
         GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
 
-        if (!settings.getValue().equals("YES"))
-            return new ResponseEntity("Statistic is restricted", HttpStatus.BAD_REQUEST);
-
-        if(!authService.isUserAuthorize())
+        if (!settings.getValue().equals("YES") && !authService.isUserAuthorize())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 
         List<Post> posts = postRepository.findSortPosts((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
@@ -211,13 +201,37 @@ public class GeneralServiceImpl implements GeneralService, QueryService {
     }
 
     @Override
+    public ResponseEntity<ApiResponseBody>moderation(ApiRequestBody requestBody)
+    {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+
+        int userId = authService.getAuthorizedUserId();
+        if (userRepository.findById(userId).getIsModerator() != 1)
+            return new ResponseEntity<>(ApiResponseBody.builder().result(false).build(), HttpStatus.OK);
+
+        Post post = postRepository.findById(requestBody.getPost_id());
+
+        if (requestBody.getDecision().equals("accept"))
+            post.setModerationStatus(ModerationStatus.ACCEPTED);
+        else post.setModerationStatus(ModerationStatus.DECLINED);
+
+        post.setModeratorId(userId);
+        postRepository.save(post);
+
+        return new ResponseEntity<>(ApiResponseBody.builder().result(true).build(), HttpStatus.OK);
+    }
+
+    @Override
     public ApiResponseBody editProfile() {
+
 
         return null;
     }
 
     @Override
-    public ApiResponseBody moderation(ApiRequestBody post) {
+    public String imageUpload(MultipartFile file)
+    {
         return null;
     }
 }
