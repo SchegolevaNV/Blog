@@ -213,7 +213,7 @@ public class PostServiceImpl implements PostService
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
-            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(1).build());
+            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value((byte)1).build());
         }
         return ApiResponseBody.builder().result(true).build();
     }
@@ -233,7 +233,7 @@ public class PostServiceImpl implements PostService
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
-            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value(0).build());
+            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value((byte)0).build());
         }
         return ApiResponseBody.builder().result(true).build();
     }

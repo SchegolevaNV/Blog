@@ -8,8 +8,10 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import main.configuration.Blog;
-import main.configuration.Config;
+import main.configuration.BlogConfig;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/")
@@ -19,10 +21,10 @@ public class ApiGeneralController
     GeneralService generalService;
 
     @GetMapping("init")
-    public Blog getBlogInfo()
+    public BlogConfig.Blog getBlogInfo()
     {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Config.class);
-        Blog blog = context.getBean(Blog.class);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BlogConfig.class);
+        BlogConfig.Blog blog = context.getBean(BlogConfig.Blog.class);
         context.close();
 
         return blog;
@@ -35,7 +37,6 @@ public class ApiGeneralController
     }
 
     @GetMapping("tag")
-   // @ResponseBody
     public TagsResponseBody getTags(@RequestParam (required = false) String query)
     {
         return generalService.getTags(query);
@@ -50,7 +51,7 @@ public class ApiGeneralController
     @PutMapping ("settings")
     public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
     {
-        return generalService.putSettings(settings.isMULTIUSER_MODE(), settings.isPOST_PREMODERATION(), settings.isSTATISTICS_IS_PUBLIC());
+        return generalService.putSettings(settings.isMultiuserMode(), settings.isPostPremoderation(), settings.isStatisticsIsPublic());
     }
 
     @GetMapping("statistics/my")
@@ -75,5 +76,10 @@ public class ApiGeneralController
     public ResponseEntity<ApiResponseBody> moderation(@RequestBody ApiRequestBody requestBody)
     {
         return generalService.moderation(requestBody);
+    }
+
+    @PostMapping(value = "image", consumes = "multipart/form-data")
+    public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
+        return generalService.imageUpload(file);
     }
 }

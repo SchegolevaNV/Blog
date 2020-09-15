@@ -6,6 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @SpringBootApplication
 @EnableJpaRepositories
@@ -17,6 +18,6 @@ public class Main {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
 
-        System.out.println(LocalDateTime.now());
+        System.out.println(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
     }
 }

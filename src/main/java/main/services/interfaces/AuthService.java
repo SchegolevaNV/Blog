@@ -8,6 +8,7 @@ import main.repositories.PostRepository;
 import main.services.bodies.UserBody;
 
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
 public interface AuthService
 {
@@ -17,6 +18,7 @@ public interface AuthService
     AuthResponseBody restorePassword(String email);
     AuthResponseBody changePassword(AuthRequestBody requestBody);
     AuthResponseBody signIn(AuthRequestBody requestBody);
+    AuthResponseBody getCaptcha() throws IOException;
 
     HttpSession getSession();
     boolean isUserAuthorize();

@@ -20,8 +20,6 @@ public class ApiPostController
     private PostService postService;
 
     @GetMapping("")
-    @ResponseStatus(HttpStatus.OK)
-    @ResponseBody
     public PostWallResponseBody getPosts (int offset, int limit, String mode)
     {
         return postService.getAllPosts(offset, limit, mode);
@@ -66,13 +64,13 @@ public class ApiPostController
     @PostMapping("like")
     public ApiResponseBody setLike (@RequestBody ApiRequestBody body)
     {
-        return postService.postLike(body.getPost_id());
+        return postService.postLike(body.getPostId());
     }
 
     @PostMapping("dislike")
     public ApiResponseBody setDisLike (@RequestBody ApiRequestBody body)
     {
-        return postService.postDislike(body.getPost_id());
+        return postService.postDislike(body.getPostId());
     }
 
     @PostMapping("")

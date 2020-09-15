@@ -6,6 +6,7 @@ import main.model.Post;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface GeneralService
@@ -19,7 +20,7 @@ public interface GeneralService
     ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
     ResponseEntity<ApiResponseBody> moderation(ApiRequestBody requestBody);
     ApiResponseBody editProfile();
-    String imageUpload(MultipartFile file);
+    ResponseEntity imageUpload(MultipartFile file) throws IOException;
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts)
     {

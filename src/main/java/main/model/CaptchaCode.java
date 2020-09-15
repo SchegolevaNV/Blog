@@ -4,7 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -16,7 +16,7 @@ public class CaptchaCode
     private int id;
 
     @NotNull
-    private LocalDate time;
+    private LocalDateTime time;
 
     @NotNull
     private String code;

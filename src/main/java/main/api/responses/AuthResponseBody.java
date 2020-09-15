@@ -10,7 +10,7 @@ import main.services.bodies.UserBody;
 @Builder
 public class AuthResponseBody
 {
-    private boolean result;
+    private Boolean result;
     private UserBody user;
     private String secret;
     private String image;

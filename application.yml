@@ -1,8 +1,26 @@
-spring.datasource.url: jdbc:${DATABASE_URL:postgresql://localhost:5432/blog}
+spring.datasource.url: jdbc:${CLEARDB_DATABASE_URL:postgresql://localhost:5432/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
 spring.datasource.username: postgres
 spring.datasource.password: pass
-spring.jpa.hibernate.ddl-auto: update
+spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQL9Dialect
+
+#Multipart file properties
+spring.servlet.multipart.max-file-size: 10MB
+spring.servlet.multipart.max-request-size: 10MB
+storage.location: ./upload
+
+#Email service properties
+spring.mail.host: smtp.mail.ru
+spring.mail.port: 587
+spring.mail.username: myblogtest@mail.ru
+spring.mail.password: Badwolf1963
+spring.mail.properties.mail.transport.protocol: smtp
+spring.mail.properties.mail.smtp.auth: true
+spring.mail.properties.mail.smtp.starttls.enable: true
+spring.mail.properties.debug: true
+spring.mail.properties.mail.smtp.ssl.trust: smtp.mail.ru
+
+captcha.hour: 1
 
 
 

@@ -1,6 +1,5 @@
 package main.services;
 
-import com.github.cage.Cage;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.model.*;
@@ -12,13 +11,18 @@ import main.services.bodies.TagsBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
 import javax.transaction.Transactional;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,6 +47,9 @@ public class GeneralServiceImpl implements GeneralService {
 
     @Autowired
     GlobalSettingsRepository globalSettingsRepository;
+
+    @Value("${storage.location}")
+    private String location;
 
     @Override
     public TagsResponseBody getTags(String query) {
@@ -176,11 +183,11 @@ public class GeneralServiceImpl implements GeneralService {
         if (!authService.isUserAuthorize())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        Post post = postRepository.findById(comment.getPost_id());
+        Post post = postRepository.findById(comment.getPostId());
         User user = userRepository.findById(authService.getAuthorizedUserId());
 
-        if (comment.getParent_id() != null) {
-            Optional<PostComment> postComment = postCommentRepository.findById(comment.getParent_id());
+        if (comment.getParentId() != null) {
+            Optional<PostComment> postComment = postCommentRepository.findById(comment.getParentId());
             if (postComment.isEmpty())
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -195,7 +202,7 @@ public class GeneralServiceImpl implements GeneralService {
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         }
 
-        PostComment postComment = postCommentRepository.save(PostComment.builder().parentId(comment.getParent_id())
+        PostComment postComment = postCommentRepository.save(PostComment.builder().parentId(comment.getParentId())
                 .post(post).user(user).time(LocalDateTime.now()).text(comment.getText()).build());
         return new ResponseEntity<>(ApiResponseBody.builder().id(postComment.getId()).result(true).build(), HttpStatus.OK);
     }
@@ -210,7 +217,7 @@ public class GeneralServiceImpl implements GeneralService {
         if (userRepository.findById(userId).getIsModerator() != 1)
             return new ResponseEntity<>(ApiResponseBody.builder().result(false).build(), HttpStatus.OK);
 
-        Post post = postRepository.findById(requestBody.getPost_id());
+        Post post = postRepository.findById(requestBody.getPostId());
 
         if (requestBody.getDecision().equals("accept"))
             post.setModerationStatus(ModerationStatus.ACCEPTED);
@@ -225,13 +232,52 @@ public class GeneralServiceImpl implements GeneralService {
     @Override
     public ApiResponseBody editProfile() {
 
-
         return null;
     }
 
     @Override
-    public String imageUpload(MultipartFile file)
-    {
-        return null;
+    public ResponseEntity imageUpload(MultipartFile multipartFile) throws IOException {
+
+        if (authService.isUserAuthorize() && multipartFile !=null) {
+
+            String fileName = multipartFile.getOriginalFilename();
+            String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+
+            if (!extension.contentEquals("jpg") && !extension.contentEquals("png")) {
+                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                        .result(false)
+                        .errors(ErrorsBody.builder()
+                                .image("Файл имеет некорректный формат")
+                                .build())
+                        .build());
+            }
+
+            if (multipartFile.getSize() > 5_000_000) {
+                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                        .result(false)
+                        .errors(ErrorsBody.builder()
+                                .image("Размер файла превышает допустимый")
+                                .build())
+                        .build());
+            }
+
+            String[] alphabet = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+            "s", "t", "u", "v", "w", "x", "y", "z"};
+
+            Random random = new Random();
+
+            for (int i = 0; i < 3; i++) {
+                String folderName = alphabet[random.nextInt(25)] + alphabet[random.nextInt(25)];
+                location = location.concat("/" + folderName);
+            }
+            File dirs = new File(location);
+            dirs.mkdirs();
+            BufferedImage bufferedImage = ImageIO.read(multipartFile.getInputStream());
+            File outputFile = new File(dirs + "/" + fileName);
+            ImageIO.write(bufferedImage, "jpg", outputFile);
+
+            return ResponseEntity.ok(location + "/" + fileName);
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }
