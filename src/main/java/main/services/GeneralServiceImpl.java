@@ -186,11 +186,12 @@ public class GeneralServiceImpl implements GeneralService {
         Post post = postRepository.findById(comment.getPostId());
         User user = userRepository.findById(authService.getAuthorizedUserId());
 
-        if (comment.getParentId() != null) {
-            Optional<PostComment> postComment = postCommentRepository.findById(comment.getParentId());
-            if (postComment.isEmpty())
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+//        if (comment.getParentId() != null) {
+//            int parentId = comment.getParentId();
+//            PostComment postComment = postCommentRepository.findById(parentId);
+//            if (postComment == null)
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+//        }
 
         if (post == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
