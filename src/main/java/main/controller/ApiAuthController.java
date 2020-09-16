@@ -16,9 +16,8 @@ public class ApiAuthController {
     @Autowired
     AuthService authService;
 
-    @ResponseStatus(HttpStatus.OK)
     @PostMapping("login")
-    public AuthResponseBody login (@RequestBody AuthRequestBody user)
+    public AuthResponseBody login(@RequestBody AuthRequestBody user)
     {
         return authService.login(user.getEmail(), user.getPassword());
     }

@@ -5,6 +5,8 @@ import main.api.responses.*;
 import main.model.*;
 import main.model.enums.Errors;
 import main.model.enums.ModerationStatus;
+import main.model.enums.Settings;
+import main.model.GlobalSettings;
 import main.repositories.*;
 import main.services.bodies.ErrorsBody;
 import main.services.bodies.TagsBody;
@@ -114,11 +116,11 @@ public class GeneralServiceImpl implements GeneralService {
             if (mySettings.getValue().equals("YES"))
                 value = true;
 
-            if (mySettings.getCode().equals("MULTIUSER_MODE"))
+            if (mySettings.getCode().equals(Settings.MULTIUSER_MODE.toString()))
                 multiuserMode = value;
-            if (mySettings.getCode().equals("POST_PREMODERATION"))
+            if (mySettings.getCode().equals(Settings.POST_PREMODERATION.toString()))
                 postPremoderation = value;
-            if (mySettings.getCode().equals("STATISTICS_IS_PUBLIC"))
+            if (mySettings.getCode().equals(Settings.STATISTICS_IS_PUBLIC.toString()))
                 statisticsIsPublic = value;
         }
         return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
@@ -130,16 +132,18 @@ public class GeneralServiceImpl implements GeneralService {
     {
         String value = "NO";
         HashMap<String, Boolean> codes = new HashMap<>();
-        codes.put("MULTIUSER_MODE", multiuserMode);
-        codes.put("POST_PREMODERATION", postPremoderation);
-        codes.put("STATISTICS_IS_PUBLIC", statisticsIsPublic);
+        codes.put(Settings.MULTIUSER_MODE.toString(), multiuserMode);
+        codes.put(Settings.POST_PREMODERATION.toString(), postPremoderation);
+        codes.put(Settings.STATISTICS_IS_PUBLIC.toString(), statisticsIsPublic);
 
         if (authService.isUserAuthorize()) {
             User user = userRepository.findById(authService.getAuthorizedUserId());
             if (user.getIsModerator() == 1) {
                 for (Map.Entry<String, Boolean> code : codes.entrySet()) {
-                    if (code.getValue())
+                    boolean isCodeExist = code.getValue();
+                    if (isCodeExist) {
                         value = "YES";
+                    }
 
                     GlobalSettings settings = globalSettingsRepository.findByCode(code.getKey());
                     settings.setValue(value);
@@ -186,12 +190,12 @@ public class GeneralServiceImpl implements GeneralService {
         Post post = postRepository.findById(comment.getPostId());
         User user = userRepository.findById(authService.getAuthorizedUserId());
 
-//        if (comment.getParentId() != null) {
-//            int parentId = comment.getParentId();
-//            PostComment postComment = postCommentRepository.findById(parentId);
-//            if (postComment == null)
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-//        }
+        if (comment.getParentId() != null) {
+            int parentId = comment.getParentId();
+            PostComment postComment = postCommentRepository.findById(parentId);
+            if (postComment == null)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
         if (post == null)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -242,6 +246,7 @@ public class GeneralServiceImpl implements GeneralService {
         if (authService.isUserAuthorize() && multipartFile !=null) {
 
             String fileName = multipartFile.getOriginalFilename();
+            assert fileName != null;
             String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
 
             if (!extension.contentEquals("jpg") && !extension.contentEquals("png")) {

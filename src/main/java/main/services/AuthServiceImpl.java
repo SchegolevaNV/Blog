@@ -1,10 +1,8 @@
 package main.services;
 
-import com.github.cage.Cage;
 import com.github.cage.YCage;
 import main.model.CaptchaCode;
 import main.repositories.CaptchaCodeRepository;
-import org.springframework.beans.factory.annotation.Value;
 import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
 import main.model.User;
@@ -12,7 +10,6 @@ import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -120,11 +117,11 @@ public class AuthServiceImpl implements AuthService
         String secretCode = getRandomHash(22);
         String captchaCode = getRandomHash(4);
         String code = Base64.getEncoder().encodeToString(captchaCode.getBytes());
-        CaptchaCode captcha = new CaptchaCode();
-        captcha.setTime(LocalDateTime.now());
-        captcha.setCode(code);
-        captcha.setSecretCode(secretCode);
-        captchaCodeRepository.save(captcha);
+        captchaCodeRepository.save(CaptchaCode.builder()
+                .time(LocalDateTime.now())
+                .code(code)
+                .secretCode(secretCode)
+                .build());
 
        int WIDTH = 100;
        int HEIGHT = 35;

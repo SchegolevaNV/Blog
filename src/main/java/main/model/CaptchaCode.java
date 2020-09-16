@@ -1,5 +1,6 @@
 package main.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -7,6 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @Entity
 @Table(name = "captcha_codes")
 public class CaptchaCode

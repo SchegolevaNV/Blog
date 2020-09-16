@@ -7,8 +7,8 @@ import main.api.responses.PostWallResponseBody;
 import main.services.interfaces.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,6 +32,7 @@ public class ApiPostController
     }
 
     @GetMapping("byDate")
+    //@PreAuthorize("hasAuthority('user:moderate')")
     public PostWallResponseBody getPostsByDate (int offset, int limit, String date)
     {
         return postService.getPostsByDate(offset, limit, date);
