@@ -9,11 +9,12 @@ import main.services.bodies.UserBody;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.security.Principal;
 
 public interface AuthService
 {
     AuthResponseBody login(String email, String password);
-    AuthResponseBody checkAuth();
+    AuthResponseBody checkAuth(Principal principal);
     AuthResponseBody logout();
     AuthResponseBody restorePassword(String email);
     AuthResponseBody changePassword(AuthRequestBody requestBody);

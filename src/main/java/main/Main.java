@@ -11,8 +11,7 @@ import java.time.ZoneOffset;
 @SpringBootApplication
 @EnableJpaRepositories
 @EntityScan(basePackages = {"main/model"})
-@ComponentScan(basePackages = {"main/controller", "main/services"})
-
+@ComponentScan(basePackages = {"main/controller", "main/services", "main/configuration", "main/security"})
 public class Main {
 
     public static void main(String[] args) {

@@ -5,11 +5,15 @@ import main.model.CaptchaCode;
 import main.repositories.CaptchaCodeRepository;
 import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
-import main.model.User;
 import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -21,6 +25,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Random;
@@ -34,47 +39,46 @@ public class AuthServiceImpl implements AuthService
     //@Value("${captcha.hour}")
     private LocalDateTime captchaLifetime;
 
-    @Autowired
-    UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CaptchaCodeRepository captchaCodeRepository;
+    private final EmailSenderService emailSenderService;
 
     @Autowired
-    PostRepository postRepository;
-
-    @Autowired
-    CaptchaCodeRepository captchaCodeRepository;
-
-    @Autowired
-    private EmailSenderService emailSenderService;
+    public AuthServiceImpl(AuthenticationManager authenticationManager,
+                           UserRepository userRepository,
+                           PostRepository postRepository,
+                           CaptchaCodeRepository captchaCodeRepository,
+                           EmailSenderService emailSenderService) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.captchaCodeRepository = captchaCodeRepository;
+        this.emailSenderService = emailSenderService;
+    }
 
     @Override
     public AuthResponseBody login (String email, String password)
     {
-        User user = userRepository.findByEmail(email);
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password));
 
-        if (user != null && user.getPassword().equals(password))
-        {
-            HttpSession session = getSession();
-            activeSessions.put(session.getId(), user.getId());
-        }
-        else return getFalseResult();
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        User user = (User) auth.getPrincipal();
+        main.model.User currentUser = userRepository.findByEmail(user.getUsername());
 
-        return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
+        return AuthResponseBody.builder().result(true).user(getUserBody(currentUser, postRepository)).build();
     }
 
     @Override
-    public AuthResponseBody checkAuth()
+    public AuthResponseBody checkAuth(Principal principal)
     {
-        String sessionId = getSession().getId();
-
-        if (activeSessions.containsKey(sessionId))
-        {
-            int userId = activeSessions.get(sessionId);
-            User user = userRepository.findById(userId);
-
-            return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
-        }
-        else
+        if (principal == null) {
             return getFalseResult();
+        }
+        main.model.User currentUser = userRepository.findByEmail(principal.getName());
+        return AuthResponseBody.builder().result(true).user(getUserBody(currentUser, postRepository)).build();
     }
 
     @Override
@@ -87,7 +91,7 @@ public class AuthServiceImpl implements AuthService
     @Override
     public AuthResponseBody restorePassword(String email) {
 
-        User user = userRepository.findByEmail(email);
+        main.model.User user = userRepository.findByEmail(email);
         if (user == null) {
             return AuthResponseBody.builder().result(false).build();
         }

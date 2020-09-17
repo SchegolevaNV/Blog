@@ -12,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@ComponentScan("services")
 @RequestMapping("/api/post")
 public class ApiPostController
 {
@@ -20,7 +19,10 @@ public class ApiPostController
     private PostService postService;
 
     @GetMapping("")
-    public PostWallResponseBody getPosts (int offset, int limit, String mode)
+    @PreAuthorize("hasAuthority('user:write')")
+    public PostWallResponseBody getPosts (@RequestParam(defaultValue = "0", required = false) int offset,
+                                          @RequestParam(defaultValue = "20", required = false) int limit,
+                                          @RequestParam(defaultValue = "recent", required = false) String mode)
     {
         return postService.getAllPosts(offset, limit, mode);
     }
@@ -32,7 +34,6 @@ public class ApiPostController
     }
 
     @GetMapping("byDate")
-    //@PreAuthorize("hasAuthority('user:moderate')")
     public PostWallResponseBody getPostsByDate (int offset, int limit, String date)
     {
         return postService.getPostsByDate(offset, limit, date);

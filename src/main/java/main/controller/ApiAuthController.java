@@ -4,10 +4,10 @@ import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
 import main.services.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth/")
@@ -23,9 +23,9 @@ public class ApiAuthController {
     }
 
     @GetMapping("check")
-    public AuthResponseBody checkAuth()
+    public AuthResponseBody checkAuth(Principal principal)
     {
-        return authService.checkAuth();
+        return authService.checkAuth(principal);
     }
 
     @GetMapping ("logout")
