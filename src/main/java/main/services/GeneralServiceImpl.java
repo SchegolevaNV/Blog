@@ -8,11 +8,11 @@ import main.model.enums.ModerationStatus;
 import main.model.enums.Settings;
 import main.model.GlobalSettings;
 import main.repositories.*;
-import main.services.bodies.ErrorsBody;
-import main.services.bodies.TagsBody;
+import main.api.responses.bodies.ErrorsBody;
+import main.api.responses.bodies.TagsBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.GeneralService;
-import org.springframework.beans.factory.annotation.Autowired;
+import main.services.interfaces.UtilitiesService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -32,23 +32,26 @@ import java.util.*;
 @Service
 public class GeneralServiceImpl implements GeneralService {
 
-    @Autowired
-    TagRepository tagRepository;
+    private final TagRepository tagRepository;
+    private final PostRepository postRepository;
+    private final PostCommentRepository postCommentRepository;
+    private final AuthService authService;
+    private final GlobalSettingsRepository globalSettingsRepository;
+    private final UtilitiesService utilitiesService;
 
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    PostRepository postRepository;
-
-    @Autowired
-    PostCommentRepository postCommentRepository;
-
-    @Autowired
-    AuthService authService;
-
-    @Autowired
-    GlobalSettingsRepository globalSettingsRepository;
+    public GeneralServiceImpl(TagRepository tagRepository,
+                              PostRepository postRepository,
+                              PostCommentRepository postCommentRepository,
+                              AuthService authService,
+                              GlobalSettingsRepository globalSettingsRepository,
+                              UtilitiesService utilitiesService) {
+        this.tagRepository = tagRepository;
+        this.postRepository = postRepository;
+        this.postCommentRepository = postCommentRepository;
+        this.authService = authService;
+        this.globalSettingsRepository = globalSettingsRepository;
+        this.utilitiesService = utilitiesService;
+    }
 
     @Value("${storage.location}")
     private String location;
@@ -137,7 +140,7 @@ public class GeneralServiceImpl implements GeneralService {
         codes.put(Settings.STATISTICS_IS_PUBLIC.toString(), statisticsIsPublic);
 
         if (authService.isUserAuthorize()) {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             if (user.getIsModerator() == 1) {
                 for (Map.Entry<String, Boolean> code : codes.entrySet()) {
                     boolean isCodeExist = code.getValue();
@@ -160,10 +163,10 @@ public class GeneralServiceImpl implements GeneralService {
     {
         if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             List<Post> posts = postRepository.findPostsByUser((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
                     user, Sort.by("time"));
-            return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
+            return new ResponseEntity<>(createStatisticResponseBody(posts, utilitiesService), HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
@@ -178,7 +181,7 @@ public class GeneralServiceImpl implements GeneralService {
 
         List<Post> posts = postRepository.findSortPosts((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
                 Sort.by("time"));
-        return new ResponseEntity<>(createStatisticResponseBody(posts), HttpStatus.OK);
+        return new ResponseEntity<>(createStatisticResponseBody(posts, utilitiesService), HttpStatus.OK);
     }
 
     @Override
@@ -188,7 +191,7 @@ public class GeneralServiceImpl implements GeneralService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         Post post = postRepository.findById(comment.getPostId());
-        User user = userRepository.findById(authService.getAuthorizedUserId());
+        User user = authService.getAuthorizedUser();
 
         if (comment.getParentId() != null) {
             int parentId = comment.getParentId();
@@ -202,7 +205,7 @@ public class GeneralServiceImpl implements GeneralService {
 
         if (comment.getText().length() < 10) {
             ApiResponseBody responseBody = ApiResponseBody.builder().result(false)
-                    .errors(ErrorsBody.builder().text(Errors.CommentIsEmptyOrShort.getTitle())
+                    .errors(ErrorsBody.builder().text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
                             .build()).build();
             return new ResponseEntity<>(responseBody, HttpStatus.OK);
         }
@@ -218,8 +221,8 @@ public class GeneralServiceImpl implements GeneralService {
         if (!authService.isUserAuthorize())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 
-        int userId = authService.getAuthorizedUserId();
-        if (userRepository.findById(userId).getIsModerator() != 1)
+        User user = authService.getAuthorizedUser();
+        if (user.getIsModerator() != 1)
             return new ResponseEntity<>(ApiResponseBody.builder().result(false).build(), HttpStatus.OK);
 
         Post post = postRepository.findById(requestBody.getPostId());
@@ -228,7 +231,7 @@ public class GeneralServiceImpl implements GeneralService {
             post.setModerationStatus(ModerationStatus.ACCEPTED);
         else post.setModerationStatus(ModerationStatus.DECLINED);
 
-        post.setModeratorId(userId);
+        post.setModeratorId(user.getId());
         postRepository.save(post);
 
         return new ResponseEntity<>(ApiResponseBody.builder().result(true).build(), HttpStatus.OK);

@@ -6,6 +6,7 @@ import main.services.interfaces.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import main.configuration.BlogConfig;
@@ -49,36 +50,42 @@ public class ApiGeneralController
     }
 
     @PutMapping ("settings")
+    @PreAuthorize("hasAuthority('user:moderator')")
     public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
     {
         return generalService.putSettings(settings.isMultiuserMode(), settings.isPostPremoderation(), settings.isStatisticsIsPublic());
     }
 
     @GetMapping("statistics/my")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<StatisticResponseBody> getMyStatistics()
     {
         return generalService.getMyStatistics();
     }
 
     @GetMapping("statistics/all")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<StatisticResponseBody> getAllStatistics()
     {
         return generalService.getAllStatistics();
     }
 
     @PostMapping("comment")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<ApiResponseBody> addComment(@RequestBody ApiRequestBody comment)
     {
         return generalService.addComment(comment);
     }
 
     @PostMapping("moderation")
+    @PreAuthorize("hasAuthority('user:moderator')")
     public ResponseEntity<ApiResponseBody> moderation(@RequestBody ApiRequestBody requestBody)
     {
         return generalService.moderation(requestBody);
     }
 
     @PostMapping(value = "image", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
         return generalService.imageUpload(file);
     }

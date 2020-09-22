@@ -1,4 +1,4 @@
-package main.services.bodies;
+package main.api.responses.bodies;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

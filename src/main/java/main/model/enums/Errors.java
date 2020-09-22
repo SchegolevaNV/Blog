@@ -2,17 +2,21 @@ package main.model.enums;
 
 public enum Errors
 {
-    TitleIsNotSet ("Заголовок не установлен"),
-    TitleIsShort ("Заголовок слишком короткий"),
-    TextIsShort ("Текст публикации слишком короткий"),
-    CommentIsEmptyOrShort ("Текст комментария не задан или слишком короткий"),
-    CodeIsOutOfDate ("Ссылка для восстановления пароля устарела. " +
+    TITLE_IS_NOT_SET("Заголовок не установлен"),
+    TITLE_IS_SHORT("Заголовок слишком короткий, введите минимум 3 символа"),
+    TEXT_IS_SHORT("Текст публикации слишком короткий, публикация должна быть от 50-ти символов"),
+    IMAGE_IS_BIG("Размер файла превышает допустимый размер"),
+    COMMENT_IS_EMPTY_OR_SHORT("Текст комментария не задан или слишком короткий"),
+    COMMENT_FOR_ANSWER_IS_NOT_EXIST("Комментарий, на который вы пытаетесь ответить, не существует"),
+    POST_FOR_COMMENT_IS_NOT_EXIST("Пост, к которому вы пишите комментарий, не существует"),
+    CODE_IS_OUT_OF_DATE("Ссылка для восстановления пароля устарела. " +
             "<a href=\"/auth/restore\">Запросить ссылку снова</a>"),
-    PasswordIsShort ("Пароль короче 6-ти символов"),
-    CaptchaIsIncorrect ("Код с картинки введён неверно"),
-    ThisEmailIsExist ("Этот e-mail уже зарегистрирован"),
-    NameIsIncorrect ("Имя указано неверно"),
-    PhotoIsBig ("Фото слишком большое, нужно не более 5 Мб");
+    PASSWORD_IS_SHORT("Пароль короче 6-ти символов"),
+    CAPTCHA_IS_INCORRECT("Код с картинки введён неверно"),
+    THIS_EMAIL_IS_EXIST("Этот e-mail уже зарегистрирован"),
+    NAME_IS_INCORRECT("Имя указано неверно"),
+    PHOTO_IS_BIG("Фото слишком большое, нужно не более 5 Мб"),
+    IMAGE_INVALID_FORMAT("Изображение должно быть формата JPG/PNG");
 
     private String title;
 

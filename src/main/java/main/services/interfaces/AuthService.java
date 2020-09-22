@@ -5,10 +5,9 @@ import main.api.responses.AuthResponseBody;
 import main.model.User;
 import main.model.enums.ModerationStatus;
 import main.repositories.PostRepository;
-import main.services.bodies.UserBody;
+import main.api.responses.bodies.UserBody;
+import org.springframework.security.core.Authentication;
 
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.security.Principal;
 
 public interface AuthService
@@ -19,11 +18,9 @@ public interface AuthService
     AuthResponseBody restorePassword(String email);
     AuthResponseBody changePassword(AuthRequestBody requestBody);
     AuthResponseBody signIn(AuthRequestBody requestBody);
-    AuthResponseBody getCaptcha() throws IOException;
 
-    HttpSession getSession();
     boolean isUserAuthorize();
-    int getAuthorizedUserId();
+    main.model.User getAuthorizedUser();
 
     /** default методы **/
 

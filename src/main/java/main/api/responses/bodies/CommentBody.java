@@ -1,4 +1,4 @@
-package main.services.bodies;
+package main.api.responses.bodies;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class CommentBody
 {
     private int id;
-    private String time;
+    private long time;
     private String text;
     private UserBody user;
 }

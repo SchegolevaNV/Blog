@@ -11,5 +11,5 @@ public class StatisticResponseBody
     private int likesCount;
     private int dislikesCount;
     private int viewsCount;
-    private String firstPublication;
+    private long firstPublication;
 }

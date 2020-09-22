@@ -2,6 +2,7 @@ package main.services.interfaces;
 
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
+import main.configuration.BlogConfig;
 import main.model.Post;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,13 +23,13 @@ public interface GeneralService
     ApiResponseBody editProfile();
     ResponseEntity imageUpload(MultipartFile file) throws IOException;
 
-    default StatisticResponseBody createStatisticResponseBody(List<Post> posts)
+    default StatisticResponseBody createStatisticResponseBody(List<Post> posts, UtilitiesService utilitiesService)
     {
         int likesCount = 0;
         int dislikesCount = 0;
         int viewsCount = 0;
 
-        String firstPublication = posts.get(0).getTime().format(PostService.formatter);
+        Long firstPublication = utilitiesService.getTimestampFromLocalDateTime(posts.get(0).getTime());
         int postsCount = posts.size();
 
         for (Post post : posts) {

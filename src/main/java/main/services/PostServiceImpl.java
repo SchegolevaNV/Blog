@@ -1,5 +1,6 @@
 package main.services;
 
+import lombok.Data;
 import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
@@ -7,11 +8,13 @@ import main.model.*;
 import main.model.enums.ModeValue;
 import main.model.enums.ModerationStatus;
 import main.repositories.*;
-import main.services.bodies.CommentBody;
-import main.services.bodies.UserBody;
+import main.api.responses.bodies.CommentBody;
+import main.api.responses.bodies.UserBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.PostService;
-import org.springframework.beans.factory.annotation.Autowired;
+import main.services.interfaces.UtilitiesService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,59 +24,53 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
 import static main.model.enums.ModerationStatus.NEW;
 
 @Service
+@Data
+@PropertySource("classpath:constants.yml")
 public class PostServiceImpl implements PostService
 {
-    @Autowired
-    PostRepository postRepository;
+    private final PostRepository postRepository;
+    private final TagRepository tagRepository;
+    private final PostVoteRepository postVoteRepository;
+    private final TagToPostRepository tagToPostRepository;
+    private final AuthService authService;
+    private final UtilitiesService utilitiesService;
 
-    @Autowired
-    TagRepository tagRepository;
+    @Value("${Is_Active}")
+    private byte isActive;
 
-    @Autowired
-    UserRepository userRepository;
+    @Value("${Moderation_Status}")
+    private ModerationStatus moderationStatus;
 
-    @Autowired
-    PostVoteRepository postVoteRepository;
-
-    @Autowired
-    TagToPostRepository tagToPostRepository;
-
-    @Autowired
-    AuthService authService;
-
-    public static final byte IS_ACTIVE = 1;
-    private static final ModerationStatus MODERATION_STATUS = ModerationStatus.ACCEPTED;
-    private final LocalDateTime time = LocalDateTime.now();
+    private LocalDateTime time = LocalDateTime.now(ZoneId.of("UTC"));
     private List<Post> posts;
 
     @Override
-    public PostWallResponseBody getAllPosts (int offset, int limit, String mode)
-    {
-        List<Post> posts = getAndSortPosts(offset, limit, mode);
-        int count = postRepository.getPostsCountByActiveAndModStatusAndTime(IS_ACTIVE, MODERATION_STATUS, time);
-        return new PostWallResponseBody(count, getListPostBodies(posts));
+    public PostWallResponseBody getAllPosts (int offset, int limit, String mode) {
+        posts = getAndSortPosts(offset, limit, mode);
+        int count = postRepository.getPostsCountByActiveAndModStatusAndTime(isActive, moderationStatus, time);
+        return new PostWallResponseBody(count, getListPostBodies(posts, utilitiesService));
     }
 
     @Override
-    public PostWallResponseBody searchPosts(int offset, int limit, String query)
-    {
-        posts = postRepository.findPostByQuery(IS_ACTIVE, MODERATION_STATUS, time, query, setPageable(offset, limit));
-        int count = postRepository.getTotalPostCountByQuery(IS_ACTIVE, MODERATION_STATUS, time, query);
-        return new PostWallResponseBody(count, getListPostBodies(posts));
+    public PostWallResponseBody searchPosts(int offset, int limit, String query) {
+        posts = postRepository.findPostByQuery(isActive, moderationStatus, time, query, setPageable(offset, limit));
+        int count = postRepository.getTotalPostCountByQuery(isActive, moderationStatus, time, query);
+        return new PostWallResponseBody(count, getListPostBodies(posts, utilitiesService));
     }
 
     @Override
     public PostWallResponseBody getPostsByDate(int offset, int limit, String date) {
 
-        posts = postRepository.findPostByDate(IS_ACTIVE, MODERATION_STATUS, time, date, setPageable(offset, limit));
-        int count = postRepository.getTotalPostCountByDate(IS_ACTIVE, MODERATION_STATUS, time, date);
-        return new PostWallResponseBody(count, getListPostBodies(posts));
+        posts = postRepository.findPostByDate(isActive, moderationStatus, time, date, setPageable(offset, limit));
+        int count = postRepository.getTotalPostCountByDate(isActive, moderationStatus, time, date);
+        return new PostWallResponseBody(count, getListPostBodies(posts, utilitiesService));
     }
 
     @Override
@@ -84,11 +81,11 @@ public class PostServiceImpl implements PostService
 
         posts.removeIf(post -> post.getIsActive() != 1
                 && post.getModerationStatus() != ModerationStatus.ACCEPTED
-                && !post.getTime().isBefore(LocalDateTime.now()));
+                && !post.getTime().isBefore(time));
 
         int finish = Math.min(posts.size(), offset + limit);
 
-        return new PostWallResponseBody(posts.size(), getListPostBodies(posts.subList(offset, finish)));
+        return new PostWallResponseBody(posts.size(), getListPostBodies(posts.subList(offset, finish), utilitiesService));
     }
 
     @Override
@@ -100,17 +97,15 @@ public class PostServiceImpl implements PostService
         Post post = postRepository.findById(id);
 
         List<Tag> tagList = post.getPostTags();
-        for (Tag tag : tagList)
-        {
+        for (Tag tag : tagList) {
             tags.add(tag.getName());
         }
 
         List<PostComment> comments = post.getPostComments();
-        for(PostComment comment : comments)
-        {
+        for(PostComment comment : comments) {
             User commentUser = comment.getUser();
             commentBodies.add(new CommentBody(comment.getId(),
-                    comment.getTime().format(formatter),
+                    utilitiesService.getTimestampFromLocalDateTime(comment.getTime()),
                     comment.getText(),
                     UserBody.builder().id(commentUser.getId())
                             .name(commentUser.getName())
@@ -118,7 +113,7 @@ public class PostServiceImpl implements PostService
         }
 
         return PostResponseBody.builder().id(post.getId())
-                .time(post.getTime().format(formatter))
+                .timestamp(utilitiesService.getTimestampFromLocalDateTime(post.getTime()))
                 .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
                 .title(post.getTitle())
                 .text(post.getText())
@@ -139,26 +134,26 @@ public class PostServiceImpl implements PostService
 
         if (authService.isUserAuthorize())
         {
-            int userId = authService.getAuthorizedUserId();
-            if (userRepository.findById(userId).getIsModerator() != 1)
+            User user = authService.getAuthorizedUser();
+            if (user.getIsModerator() != 1)
                 return new ResponseEntity("You're not the moderator!", HttpStatus.BAD_REQUEST);
 
             if (status.equals("NEW")) {
-                posts = postRepository.findByModerationStatusAndIsActive(NEW, IS_ACTIVE, setPageable(offset, limit));
-                count = postRepository.getPostsCountByActiveAndModStatus(IS_ACTIVE, NEW);
+                posts = postRepository.findByModerationStatusAndIsActive(NEW, isActive, setPageable(offset, limit));
+                count = postRepository.getPostsCountByActiveAndModStatus(isActive, NEW);
             }
             else {
                 posts = postRepository.findByModerationStatusAndIsActiveAndModeratorId(ModerationStatus.valueOf(status),
-                        IS_ACTIVE, userId,
+                        isActive, user.getId(),
                         setPageable(offset, limit));
-                count = postRepository.getTotalPostsByModerator(IS_ACTIVE, ModerationStatus.valueOf(status), userId);
+                count = postRepository.getTotalPostsByModerator(isActive, ModerationStatus.valueOf(status), user.getId());
             }
 
             List<PostResponseBody> postsList = new ArrayList<>();
             for (Post post : posts) {
                 postsList.add(PostResponseBody.builder()
                         .id(post.getId())
-                        .time(post.getTime().toString())
+                        .timestamp(utilitiesService.getTimestampFromLocalDateTime(post.getTime()))
                         .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
                         .title(post.getTitle())
                         .announce(getAnnounce(post)).build());
@@ -173,13 +168,10 @@ public class PostServiceImpl implements PostService
     {
         int count = 0;
 
-        if (!authService.isUserAuthorize())
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-
-            int userId = authService.getAuthorizedUserId();
-            User user = userRepository.findById(userId);
-            if (status.equals("inactive"))
-            {
+        if (authService.isUserAuthorize())
+        {
+            User user = authService.getAuthorizedUser();
+            if (status.equals("inactive")) {
                 posts = postRepository.findByIsActiveAndUser((byte) 0, user, setPageable(offset, limit));
                 count = postRepository.getTotalInactivePostsByUser(user);
             }
@@ -191,11 +183,14 @@ public class PostServiceImpl implements PostService
                 if (status.equals("declined"))
                     status = ModerationStatus.DECLINED.toString();
 
-                posts = postRepository.findByIsActiveAndModerationStatusAndUser(IS_ACTIVE,
+                posts = postRepository.findByIsActiveAndModerationStatusAndUser(isActive,
                         ModerationStatus.valueOf(status), user, setPageable(offset, limit));
-                count = postRepository.getTotalPostsCountByUser(IS_ACTIVE, ModerationStatus.valueOf(status), user);
+                count = postRepository.getTotalPostsCountByUser(isActive, ModerationStatus.valueOf(status), user);
             }
-        return new ResponseEntity<>(new PostWallResponseBody(count, getListPostBodies(posts)), HttpStatus.OK);
+            return new ResponseEntity<>(new PostWallResponseBody(count, getListPostBodies(posts, utilitiesService)),
+                    HttpStatus.OK);
+        }
+        else return null;
     }
 
     @Override
@@ -203,7 +198,7 @@ public class PostServiceImpl implements PostService
     {
         if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             Post post = postRepository.findById(postId);
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
 
@@ -213,7 +208,8 @@ public class PostServiceImpl implements PostService
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
-            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value((byte)1).build());
+            postVoteRepository.save(PostVote.builder()
+                    .user(user).post(post).time(time).value((byte)1).build());
         }
         return ApiResponseBody.builder().result(true).build();
     }
@@ -222,7 +218,7 @@ public class PostServiceImpl implements PostService
     public ApiResponseBody postDislike(int postId) {
         if (authService.isUserAuthorize())
         {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             Post post = postRepository.findById(postId);
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
 
@@ -233,7 +229,8 @@ public class PostServiceImpl implements PostService
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
-            postVoteRepository.save(PostVote.builder().user(user).post(post).time(LocalDateTime.now()).value((byte)0).build());
+            postVoteRepository.save(PostVote.builder()
+                    .user(user).post(post).time(time).value((byte)0).build());
         }
         return ApiResponseBody.builder().result(true).build();
     }
@@ -242,14 +239,17 @@ public class PostServiceImpl implements PostService
     public ApiResponseBody addPost(PostResponseBody post)
     {
         if (authService.isUserAuthorize()) {
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             if (isTitleAndTextCorrect(post))
                 return errorResponse();
 
             else
             {
-                Post newPost = postRepository.save(Post.builder().isActive(post.getActive())
-                        .user(user).time(setTime(post.getTime())).text(post.getText()).title(post.getTitle())
+                Post newPost = postRepository.save(Post.builder()
+                        .isActive(post.getActive())
+                        .user(user)
+                        .time(utilitiesService.setRightTime(time))
+                        .text(post.getText()).title(post.getTitle())
                         .viewCount(0).moderationStatus(NEW).build());
 
                 List<String> tags = post.getTags();
@@ -258,7 +258,9 @@ public class PostServiceImpl implements PostService
             }
             return ApiResponseBody.builder().result(true).build();
         }
-        return null;
+        return ApiResponseBody.builder()
+                .result(false)
+                .build();
     }
 
     @Transactional
@@ -268,7 +270,7 @@ public class PostServiceImpl implements PostService
         if (authService.isUserAuthorize())
         {
             Post post = postRepository.findById(id);
-            User user = userRepository.findById(authService.getAuthorizedUserId());
+            User user = authService.getAuthorizedUser();
             ModerationStatus status = post.getModerationStatus();
 
             if (user.getIsModerator() == 0 || user.getId() != post.getModeratorId())
@@ -281,7 +283,7 @@ public class PostServiceImpl implements PostService
             {
                 post.setIsActive(postResponseBody.getActive());
                 post.setModerationStatus(status);
-                post.setTime(setTime(postResponseBody.getTime()));
+                post.setTime(utilitiesService.getLocalDateTimeFromTimestamp(postResponseBody.getTimestamp()));
                 post.setTitle(postResponseBody.getTitle());
                 post.setText(postResponseBody.getText());
 
@@ -315,19 +317,19 @@ public class PostServiceImpl implements PostService
 
         if (mode.equals(ModeValue.popular.toString())) {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("commentsCount").descending());
-            posts = postRepository.findAllPostSortedByComments(IS_ACTIVE, MODERATION_STATUS, time, pageable);
+            posts = postRepository.findAllPostSortedByComments(isActive, moderationStatus, time, pageable);
         }
         else if (mode.equals(ModeValue.best.toString())) {
             Pageable pageable = PageRequest.of(page, limit);
-            posts = postRepository.findAllPostSortedByLikes(IS_ACTIVE, MODERATION_STATUS, time, pageable);
+            posts = postRepository.findAllPostSortedByLikes(isActive, moderationStatus, time, pageable);
         }
         else if (mode.equals(ModeValue.recent.toString())) {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("time").descending());
-            posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(IS_ACTIVE, MODERATION_STATUS, time, pageable);
+            posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(isActive, moderationStatus, time, pageable);
         }
         else {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("time"));
-            posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(IS_ACTIVE, MODERATION_STATUS, time, pageable);
+            posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(isActive, moderationStatus, time, pageable);
         }
         return posts;
     }

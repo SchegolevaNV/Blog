@@ -6,7 +6,6 @@ import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.services.interfaces.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +18,6 @@ public class ApiPostController
     private PostService postService;
 
     @GetMapping("")
-    @PreAuthorize("hasAuthority('user:write')")
     public PostWallResponseBody getPosts (@RequestParam(defaultValue = "0", required = false) int offset,
                                           @RequestParam(defaultValue = "20", required = false) int limit,
                                           @RequestParam(defaultValue = "recent", required = false) String mode)
@@ -52,35 +50,42 @@ public class ApiPostController
     }
 
     @GetMapping("moderation")
+    @PreAuthorize("hasAuthority('user:moderator')")
     public ResponseEntity<PostWallResponseBody> getPostsModerationStatus (int offset, int limit, String  status)
     {
         return postService.getPostsForModeration(offset, limit, status);
     }
 
     @GetMapping("my")
+    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<PostWallResponseBody> getMyPosts (int offset, int limit, String  status)
     {
         return postService.getMyPosts(offset, limit, status);
     }
 
     @PostMapping("like")
+    @PreAuthorize("hasAuthority('user:write')")
     public ApiResponseBody setLike (@RequestBody ApiRequestBody body)
     {
         return postService.postLike(body.getPostId());
     }
 
     @PostMapping("dislike")
+    @PreAuthorize("hasAuthority('user:write')")
     public ApiResponseBody setDisLike (@RequestBody ApiRequestBody body)
     {
         return postService.postDislike(body.getPostId());
     }
 
     @PostMapping("")
+    @PreAuthorize("hasAuthority('user:write')")
     public ApiResponseBody addPost(@RequestBody PostResponseBody post)
     {
         return postService.addPost(post);
     }
 
     @PutMapping("{id}")
-    public ApiResponseBody editPost (@PathVariable("id") int id, @RequestBody PostResponseBody post) {return postService.editPost(id, post);}
+    @PreAuthorize("hasAuthority('user:write')")
+    public ApiResponseBody editPost (@PathVariable("id") int id, @RequestBody PostResponseBody post)
+    {return postService.editPost(id, post);}
 }

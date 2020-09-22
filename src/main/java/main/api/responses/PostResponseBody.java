@@ -3,8 +3,8 @@ package main.api.responses;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
-import main.services.bodies.CommentBody;
-import main.services.bodies.UserBody;
+import main.api.responses.bodies.CommentBody;
+import main.api.responses.bodies.UserBody;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ public class PostResponseBody
 {
     private int id;
     private byte active;
-    private String time;
+    private Long timestamp;
     private UserBody user;
     private String title;
     private String announce;

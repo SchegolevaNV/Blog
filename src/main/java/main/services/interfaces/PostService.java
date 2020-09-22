@@ -4,8 +4,9 @@ import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
 import main.api.responses.PostWallResponseBody;
 import main.model.Post;
-import main.services.bodies.ErrorsBody;
-import main.services.bodies.UserBody;
+import main.api.responses.bodies.ErrorsBody;
+import main.api.responses.bodies.UserBody;
+import main.model.enums.Errors;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
@@ -31,17 +32,21 @@ public interface PostService
 
     /** default methods*/
 
-    default List<PostResponseBody> getListPostBodies(List<Post> posts)
+    default List<PostResponseBody> getListPostBodies(List<Post> posts, UtilitiesService utilitiesService)
     {
+
         List<PostResponseBody> postBodies = new ArrayList<>();
 
-        for (int i = 0; i < posts.size(); i++)
-        {
-            Post post = posts.get(i);
+        for (Post post : posts) {
+            LocalDateTime postTimeToUtc = utilitiesService.convertLocalTimeToUtcTime(post.getTime());
+            long timestamp = utilitiesService.getTimestampFromLocalDateTime(postTimeToUtc);
 
             postBodies.add(PostResponseBody.builder().id(post.getId())
-                    .time(post.getTime().format(formatter))
-                    .user(UserBody.builder().id(post.getUser().getId()).name(post.getUser().getName()).build())
+                    .timestamp(timestamp)
+                    .user(UserBody.builder()
+                            .id(post.getUser().getId())
+                            .name(post.getUser().getName())
+                            .build())
                     .title(post.getTitle())
                     .announce(getAnnounce(post))
                     .likeCount(post.getVotesCount("likes"))
@@ -70,17 +75,11 @@ public interface PostService
             || postResponseBody.getTitle().length() < 3 || postResponseBody.getText().length() < 10;
     }
 
-    default LocalDateTime setTime (String time)
-    {
-        LocalDateTime newTime = LocalDateTime.parse(time, formatter);
-        return (newTime.isBefore(LocalDateTime.now())) ? LocalDateTime.now() : newTime;
-    }
-
     default ApiResponseBody errorResponse ()
     {
         ErrorsBody error = ErrorsBody.builder()
-                .title("Заголовок не установлен или короткий")
-                .text("Текст публикации не установлен или слишком короткий")
+                .title(Errors.TITLE_IS_NOT_SET.getTitle())
+                .text(Errors.TEXT_IS_SHORT.getTitle())
                 .build();
 
         return ApiResponseBody.builder().result(false).errors(error).build();

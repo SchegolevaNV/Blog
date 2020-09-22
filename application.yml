@@ -3,6 +3,7 @@ spring.datasource.username: postgres
 spring.datasource.password: pass
 spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQL9Dialect
+
 #server.port: ${PORT:8080}
 
 #Multipart file properties
@@ -22,6 +23,5 @@ spring.mail.properties.debug: true
 spring.mail.properties.mail.smtp.ssl.trust: smtp.mail.ru
 
 captcha.hour: 1
-
 
 
