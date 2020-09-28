@@ -19,10 +19,10 @@ public class TagToPost
     private int id;
 
     @NotNull
-    @Column(name = "post_id")
-    private int postId;
+    @ManyToOne(cascade = CascadeType.ALL)
+    private Post post;
 
     @NotNull
-    @Column(name = "tag_id")
-    private int tagId;
+    @ManyToOne(cascade = CascadeType.ALL)
+    private Tag tag;
 }

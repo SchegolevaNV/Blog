@@ -25,6 +25,9 @@ public class Tag
             inverseJoinColumns = {@JoinColumn(name = "post_id")})
     private List<Post> tagsPosts;
 
+    @OneToMany(mappedBy = "tag")
+    private List<TagToPost> tagToPosts;
+
     public Tag(@NotNull String name) {
         this.name = name;
     }

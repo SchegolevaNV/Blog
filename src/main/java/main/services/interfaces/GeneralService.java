@@ -2,7 +2,6 @@ package main.services.interfaces;
 
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
-import main.configuration.BlogConfig;
 import main.model.Post;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,15 +11,15 @@ import java.util.List;
 
 public interface GeneralService
 {
-    TagsResponseBody getTags(String query);
-    CalendarResponseBody getCalendar(String year);
-    SettingsResponseBody getSettings();
-    SettingsResponseBody putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC);
+    ResponseEntity<TagsResponseBody> getTags(String query);
+    ResponseEntity<CalendarResponseBody> getCalendar(String year);
+    ResponseEntity<SettingsResponseBody> getSettings();
+    ResponseEntity<SettingsResponseBody> putSettings(boolean MULTIUSER_MODE, boolean POST_PREMODERATION, boolean STATISTICS_IS_PUBLIC);
     ResponseEntity<StatisticResponseBody> getMyStatistics();
     ResponseEntity<StatisticResponseBody> getAllStatistics();
     ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
     ResponseEntity<ApiResponseBody> moderation(ApiRequestBody requestBody);
-    ApiResponseBody editProfile();
+    ResponseEntity<ApiResponseBody> editProfile();
     ResponseEntity imageUpload(MultipartFile file) throws IOException;
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts, UtilitiesService utilitiesService)

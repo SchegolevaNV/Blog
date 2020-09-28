@@ -1,12 +1,13 @@
 package main.services;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import main.api.requests.AuthRequestBody;
 import main.api.responses.AuthResponseBody;
 import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.UtilitiesService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,11 +15,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.security.Principal;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService
 {
     private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
@@ -28,26 +29,18 @@ public class AuthServiceImpl implements AuthService
     private final EmailSenderService emailSenderService;
     private final UtilitiesService utilitiesService;
 
-    @Autowired
-    public AuthServiceImpl(AuthenticationManager authenticationManager,
-                           UserRepository userRepository,
-                           PostRepository postRepository,
-                           EmailSenderService emailSenderService,
-                           UtilitiesService utilitiesService) {
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.postRepository = postRepository;
-        this.emailSenderService = emailSenderService;
-        this.utilitiesService = utilitiesService;
-    }
+    @Value("${link.for.recovery.password}")
+    private String link;
+
+    @Value("${subject.for.recovery.mail}")
+    private String subject;
 
     @Override
-    public AuthResponseBody login (String email, String password)
-    {
+    public ResponseEntity<AuthResponseBody> login (String email, String password) {
         main.model.User user = userRepository.findByEmail(email);
         if (user == null || !bcryptEncoder.matches(password, user.getPassword())) {
             log.info("User - {} not find or password - {} is wrong", email, password);
-            return getFalseResult();
+            return ResponseEntity.ok(getFalseResult());
         }
 
         Authentication auth = authenticationManager.authenticate(
@@ -55,49 +48,61 @@ public class AuthServiceImpl implements AuthService
         SecurityContextHolder.getContext().setAuthentication(auth);
         log.info("User {} was successfully logged", email);
 
-        return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
+        return ResponseEntity.ok(AuthResponseBody.builder()
+                .result(true)
+                .user(getUserBody(user, postRepository))
+                .build());
     }
 
     @Override
-    public AuthResponseBody checkAuth(Principal principal)
+    public ResponseEntity<AuthResponseBody> checkAuth(Principal principal)
     {
            if (principal == null) {
-            return getFalseResult();
+               return ResponseEntity.ok(getFalseResult());
         }
         main.model.User currentUser = userRepository.findByEmail(principal.getName());
-        return AuthResponseBody.builder().result(true).user(getUserBody(currentUser, postRepository)).build();
+        return ResponseEntity.ok(AuthResponseBody.builder()
+                .result(true)
+                .user(getUserBody(currentUser, postRepository))
+                .build());
     }
 
     @Override
-    public AuthResponseBody logout() {
+    public ResponseEntity<AuthResponseBody> logout() {
         SecurityContextHolder.clearContext();
-        return getTrueResult();
+        return ResponseEntity.ok(getTrueResult());
     }
 
     @Override
-    public AuthResponseBody restorePassword(String email) {
+    public ResponseEntity<AuthResponseBody> restorePassword(String email) {
 
         main.model.User user = userRepository.findByEmail(email);
         if (user == null) {
-            return AuthResponseBody.builder().result(false).build();
+            return ResponseEntity.ok(getFalseResult());
         }
         else {
             String hash = utilitiesService.getRandomHash(45);
-            String link =  "/login/change-password/" + hash;
+            link += hash;
             user.setCode(hash);
             userRepository.save(user);
-            emailSenderService.sendMessage(email, "password recovery", link);
-            return AuthResponseBody.builder().result(true).build();
+            emailSenderService.sendMessage(email, subject, link);
+            return ResponseEntity.ok(getTrueResult());
         }
     }
 
     @Override
-    public AuthResponseBody changePassword(AuthRequestBody requestBody) {
+    public ResponseEntity<AuthResponseBody> changePassword(String code, String password, String captcha, String captchaSecret)
+    {
+        //code - из таблицы юзеров
+        //captcha - поле код в таблице капчи
+        //secret - поле секрет в таблице капчи
+        //капча может устареть!
+
         return null;
     }
 
     @Override
-    public AuthResponseBody signIn(AuthRequestBody requestBody) {
+    public ResponseEntity<AuthResponseBody> signIn(String email, String password, String name, String captcha, String captchaSecret) {
         return null;
     }
 

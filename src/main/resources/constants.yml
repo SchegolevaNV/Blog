@@ -1,4 +1,16 @@
 #For getting posts
+is.active: 1
+moderation.status: ACCEPTED
+announce.max.length: 500
+post.title.min.length: 3
+post.title.max.length: 10
 
-Is_Active: 1
-Moderation_Status: 'ACCEPTED'
+#For recovery password
+link.for.recovery.password: /login/change-password/
+subject.for.recovery.mail: password recovery
+
+#For captcha
+captcha.width: 100
+captcha.height: 35
+captcha.prefix: "data:image/png;base64, "
+captcha.format: png

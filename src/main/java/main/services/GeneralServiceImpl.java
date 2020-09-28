@@ -1,5 +1,6 @@
 package main.services;
 
+import lombok.RequiredArgsConstructor;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.model.*;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class GeneralServiceImpl implements GeneralService {
 
     private final TagRepository tagRepository;
@@ -39,25 +41,11 @@ public class GeneralServiceImpl implements GeneralService {
     private final GlobalSettingsRepository globalSettingsRepository;
     private final UtilitiesService utilitiesService;
 
-    public GeneralServiceImpl(TagRepository tagRepository,
-                              PostRepository postRepository,
-                              PostCommentRepository postCommentRepository,
-                              AuthService authService,
-                              GlobalSettingsRepository globalSettingsRepository,
-                              UtilitiesService utilitiesService) {
-        this.tagRepository = tagRepository;
-        this.postRepository = postRepository;
-        this.postCommentRepository = postCommentRepository;
-        this.authService = authService;
-        this.globalSettingsRepository = globalSettingsRepository;
-        this.utilitiesService = utilitiesService;
-    }
-
     @Value("${storage.location}")
     private String location;
 
     @Override
-    public TagsResponseBody getTags(String query) {
+    public ResponseEntity<TagsResponseBody> getTags(String query) {
 
         int count = postRepository.getPostsCountByActiveAndModStatusAndTime((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
         List<TagsBody> tags = new ArrayList<>();
@@ -75,11 +63,11 @@ public class GeneralServiceImpl implements GeneralService {
             double weight = (double) posts.size() / (double) count;
             tags.add(new TagsBody(tag.getName(), weight));
         }
-        return new TagsResponseBody(tags);
+        return ResponseEntity.ok(new TagsResponseBody(tags));
     }
 
     @Override
-    public CalendarResponseBody getCalendar(String year)
+    public ResponseEntity<CalendarResponseBody> getCalendar(String year)
     {
         if (year == null
                 || !year.matches("[0-9]{4}")
@@ -100,11 +88,11 @@ public class GeneralServiceImpl implements GeneralService {
             posts.put(day,count);
         });
 
-        return new CalendarResponseBody(years, posts);
+        return ResponseEntity.ok(new CalendarResponseBody(years, posts));
     }
 
     @Override
-    public SettingsResponseBody getSettings()
+    public ResponseEntity<SettingsResponseBody> getSettings()
     {
         boolean multiuserMode = false;
         boolean postPremoderation = false;
@@ -126,12 +114,12 @@ public class GeneralServiceImpl implements GeneralService {
             if (mySettings.getCode().equals(Settings.STATISTICS_IS_PUBLIC.toString()))
                 statisticsIsPublic = value;
         }
-        return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
+        return ResponseEntity.ok(new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic));
     }
 
     @Override
     @Transactional
-    public SettingsResponseBody putSettings(boolean multiuserMode, boolean postPremoderation, boolean statisticsIsPublic)
+    public ResponseEntity<SettingsResponseBody> putSettings(boolean multiuserMode, boolean postPremoderation, boolean statisticsIsPublic)
     {
         String value = "NO";
         HashMap<String, Boolean> codes = new HashMap<>();
@@ -152,7 +140,7 @@ public class GeneralServiceImpl implements GeneralService {
                     settings.setValue(value);
                     globalSettingsRepository.save(settings);
                 }
-                return new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic);
+                return ResponseEntity.ok(new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic));
             }
         }
         return null;
@@ -238,7 +226,7 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     @Override
-    public ApiResponseBody editProfile() {
+    public ResponseEntity<ApiResponseBody> editProfile() {
 
         return null;
     }
@@ -256,7 +244,7 @@ public class GeneralServiceImpl implements GeneralService {
                 return ResponseEntity.badRequest().body(ApiResponseBody.builder()
                         .result(false)
                         .errors(ErrorsBody.builder()
-                                .image("Файл имеет некорректный формат")
+                                .image(Errors.IMAGE_INVALID_FORMAT.getTitle())
                                 .build())
                         .build());
             }
@@ -265,7 +253,7 @@ public class GeneralServiceImpl implements GeneralService {
                 return ResponseEntity.badRequest().body(ApiResponseBody.builder()
                         .result(false)
                         .errors(ErrorsBody.builder()
-                                .image("Размер файла превышает допустимый")
+                                .image(Errors.IMAGE_IS_BIG.getTitle())
                                 .build())
                         .build());
             }

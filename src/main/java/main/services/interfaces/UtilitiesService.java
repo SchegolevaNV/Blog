@@ -7,5 +7,5 @@ public interface UtilitiesService {
     long getTimestampFromLocalDateTime(LocalDateTime localDateTime);
     LocalDateTime getLocalDateTimeFromTimestamp(long timestamp);
     LocalDateTime setRightTime(LocalDateTime localDateTime);
-    LocalDateTime convertLocalTimeToUtcTime(LocalDateTime localDateTime);
+    LocalDateTime convertLocalTimeToUtc(LocalDateTime localDateTime);
 }

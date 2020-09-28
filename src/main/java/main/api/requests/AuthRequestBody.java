@@ -16,6 +16,7 @@ public class AuthRequestBody
     private String password;
     private String name;
     private String captcha;
+    private String code;
 
     @JsonProperty("captcha_secret")
     private String captchaSecret;

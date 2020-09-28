@@ -62,6 +62,9 @@ public class Post
     @OneToMany(mappedBy = "post")
     private List<PostComment> postComments;
 
+    @OneToMany(mappedBy = "post")
+    private List<TagToPost> tagToPosts;
+
     public int getCommentsCount()
     {
         return getPostComments().size();

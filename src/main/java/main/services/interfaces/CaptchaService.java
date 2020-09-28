@@ -1,7 +1,9 @@
 package main.services.interfaces;
 import main.api.responses.AuthResponseBody;
+import org.springframework.http.ResponseEntity;
+
 import java.io.IOException;
 
 public interface CaptchaService {
-    AuthResponseBody getCaptcha() throws IOException;
+    ResponseEntity<AuthResponseBody> getCaptcha() throws IOException;
 }

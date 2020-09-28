@@ -1,9 +1,9 @@
 package main.controller;
 
+import lombok.RequiredArgsConstructor;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.services.interfaces.GeneralService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,10 +16,10 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/")
+@RequiredArgsConstructor
 public class ApiGeneralController
 {
-    @Autowired
-    GeneralService generalService;
+    private final GeneralService generalService;
 
     @GetMapping("init")
     public BlogConfig.Blog getBlogInfo()
@@ -32,26 +32,24 @@ public class ApiGeneralController
     }
 
     @GetMapping("calendar")
-    public CalendarResponseBody getCalendar(String year)
-    {
+    public ResponseEntity<CalendarResponseBody> getCalendar(String year) {
         return generalService.getCalendar(year);
     }
 
     @GetMapping("tag")
-    public TagsResponseBody getTags(@RequestParam (required = false) String query)
-    {
+    public ResponseEntity<TagsResponseBody> getTags(@RequestParam (required = false) String query) {
         return generalService.getTags(query);
     }
 
     @GetMapping("settings")
-    public SettingsResponseBody getSettings()
+    public ResponseEntity<SettingsResponseBody> getSettings()
     {
         return generalService.getSettings();
     }
 
     @PutMapping ("settings")
     @PreAuthorize("hasAuthority('user:moderator')")
-    public SettingsResponseBody putSettings(@RequestBody SettingsResponseBody settings)
+    public ResponseEntity<SettingsResponseBody> putSettings(@RequestBody SettingsResponseBody settings)
     {
         return generalService.putSettings(settings.isMultiuserMode(), settings.isPostPremoderation(), settings.isStatisticsIsPublic());
     }

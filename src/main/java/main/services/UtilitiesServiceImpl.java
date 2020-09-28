@@ -40,7 +40,7 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), TIME_ZONE);
     }
 
-    public LocalDateTime convertLocalTimeToUtcTime(LocalDateTime localDateTime) {
+    public LocalDateTime convertLocalTimeToUtc(LocalDateTime localDateTime) {
         ZonedDateTime localZone = localDateTime.atZone(ZoneId.systemDefault());
         ZonedDateTime utcZone = localZone.withZoneSameInstant(TIME_ZONE);
         return utcZone.toLocalDateTime();
