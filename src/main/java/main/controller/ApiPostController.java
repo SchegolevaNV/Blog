@@ -1,6 +1,5 @@
 package main.controller;
 
-import lombok.RequiredArgsConstructor;
 import main.api.requests.ApiRequestBody;
 import main.api.responses.ApiResponseBody;
 import main.api.responses.PostResponseBody;
@@ -10,12 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/api/post")
-@RequiredArgsConstructor
 public class ApiPostController
 {
     private final PostService postService;
+
+    public ApiPostController(PostService postService) {
+        this.postService = postService;
+    }
 
     @GetMapping("")
     public ResponseEntity<PostWallResponseBody> getPosts (@RequestParam(defaultValue = "0", required = false) int offset,
@@ -39,9 +43,9 @@ public class ApiPostController
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<PostResponseBody> getPost (@PathVariable("id") int id)
+    public ResponseEntity<PostResponseBody> getPost (@PathVariable("id") int id, Principal principal)
     {
-        return postService.getPostById(id);
+        return postService.getPostById(id, principal);
     }
 
     @GetMapping("byTag")
@@ -89,13 +93,17 @@ public class ApiPostController
 
     @PostMapping("")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity<ApiResponseBody> addPost(@RequestBody PostResponseBody post)
+    public ResponseEntity<ApiResponseBody> addPost(@RequestBody ApiRequestBody post)
     {
-        return postService.addPost(post);
+        return postService.addPost(post.getTimestamp(), post.getActive(), post.getTitle(),
+                post.getTags(), post.getText());
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity<ApiResponseBody> editPost (@PathVariable("id") int id, @RequestBody PostResponseBody post)
-    {return postService.editPost(id, post);}
+    public ResponseEntity<ApiResponseBody> editPost (@PathVariable("id") int id, @RequestBody ApiRequestBody post)
+    {
+        return postService.editPost(id, post.getTimestamp(), post.getActive(), post.getTitle(),
+            post.getTags(), post.getText());
+    }
 }

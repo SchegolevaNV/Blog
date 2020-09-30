@@ -16,6 +16,7 @@ public enum Errors
     THIS_EMAIL_IS_EXIST("Этот e-mail уже зарегистрирован"),
     NAME_IS_INCORRECT("Имя указано неверно"),
     PHOTO_IS_BIG("Фото слишком большое, нужно не более 5 Мб"),
+    USER_IS_NOT_MODERATOR("Вы не являетесь модератором"),
     IMAGE_INVALID_FORMAT("Изображение должно быть формата JPG/PNG");
 
     private String title;

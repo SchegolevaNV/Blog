@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,4 +23,8 @@ public class ApiRequestBody
 
     private String text;
     private String decision;
+    private Long timestamp;
+    private Byte active;
+    private String title;
+    private List<String> tags;
 }

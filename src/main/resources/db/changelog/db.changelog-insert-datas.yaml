@@ -429,7 +429,7 @@ databaseChangeLog:
                   value: 2020-04-29 00:25:57.610
               - column:
                   name: value
-                  value: 0
+                  value: -1
         - insert:
             tableName: post_votes
             columns:
@@ -489,7 +489,7 @@ databaseChangeLog:
                   value: 2020-04-29 00:25:57.610
               - column:
                   name: value
-                  value: 0
+                  value: -1
         - insert:
             tableName: post_votes
             columns:

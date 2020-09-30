@@ -76,9 +76,9 @@ public class Post
 
         int likeCounts = 0;
         int dislikeCount = 0;
-        for (PostVote postVote : postVotes)
+        for (PostVote postV : postVotes)
         {
-            if (postVote.getValue() == 1)
+            if (postV.getValue() == 1)
                 likeCounts++;
             else dislikeCount++;
         }
