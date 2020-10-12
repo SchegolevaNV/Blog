@@ -62,6 +62,9 @@ public class Post
     @OneToMany(mappedBy = "post")
     private List<PostComment> postComments;
 
+    @OneToMany(mappedBy = "post")
+    private List<TagToPost> tagToPosts;
+
     public int getCommentsCount()
     {
         return getPostComments().size();
@@ -73,9 +76,9 @@ public class Post
 
         int likeCounts = 0;
         int dislikeCount = 0;
-        for (PostVote postVote : postVotes)
+        for (PostVote postV : postVotes)
         {
-            if (postVote.getValue() == 1)
+            if (postV.getValue() == 1)
                 likeCounts++;
             else dislikeCount++;
         }

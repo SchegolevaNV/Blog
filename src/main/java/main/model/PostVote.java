@@ -32,5 +32,5 @@ public class PostVote
     private LocalDateTime time;
 
     @NotNull
-    private int value;
+    private byte value;
 }

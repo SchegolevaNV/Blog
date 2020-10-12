@@ -22,7 +22,7 @@ databaseChangeLog:
                   value: "daniil@mail.ru"
               - column:
                   name: password
-                  value: "prorok12345"
+                  value: "$2y$12$ZeTOfZwsneaUwvjV4adUX.K1WYqzDwQiqKb0bDYlr9Aeyrt5DxVIO"
         - insert:
             tableName: users
             columns:
@@ -40,7 +40,7 @@ databaseChangeLog:
                   value: "michail@mail.ru"
               - column:
                   name: password
-                  value: "angel12345"
+                  value: "$2y$12$wHXEvIlgJaupzzqElywNteajCaD87YF4pjSnlfWP82KKgUseEDTa."
 
 #добавление постов
         - insert:
@@ -429,7 +429,7 @@ databaseChangeLog:
                   value: 2020-04-29 00:25:57.610
               - column:
                   name: value
-                  value: 0
+                  value: -1
         - insert:
             tableName: post_votes
             columns:
@@ -489,7 +489,7 @@ databaseChangeLog:
                   value: 2020-04-29 00:25:57.610
               - column:
                   name: value
-                  value: 0
+                  value: -1
         - insert:
             tableName: post_votes
             columns:

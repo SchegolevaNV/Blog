@@ -1,12 +1,14 @@
 package main.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
+@Builder
 @Entity
 @Table(name = "captcha_codes")
 public class CaptchaCode
@@ -16,7 +18,7 @@ public class CaptchaCode
     private int id;
 
     @NotNull
-    private LocalDate time;
+    private LocalDateTime time;
 
     @NotNull
     private String code;

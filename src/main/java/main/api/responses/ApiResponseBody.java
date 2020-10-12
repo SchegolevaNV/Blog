@@ -3,7 +3,7 @@ package main.api.responses;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
-import main.services.bodies.ErrorsBody;
+import main.api.responses.bodies.ErrorsBody;
 
 @Data
 @Builder

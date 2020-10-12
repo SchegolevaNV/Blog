@@ -1,6 +1,7 @@
 package main.api.requests;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,9 +10,14 @@ import lombok.Data;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthRequestBody
 {
-    private String e_mail;
+    @JsonProperty("e_mail")
+    private String email;
+
     private String password;
     private String name;
     private String captcha;
-    private String captcha_secret;
+    private String code;
+
+    @JsonProperty("captcha_secret")
+    private String captchaSecret;
 }

@@ -2,7 +2,7 @@ package main.api.responses;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import main.services.bodies.TagsBody;
+import main.api.responses.bodies.TagsBody;
 
 import java.util.List;
 

@@ -1,10 +1,12 @@
 package main.api.requests;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -13,8 +15,16 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiRequestBody
 {
-    private int post_id;
-    private Integer parent_id;
+    @JsonProperty("post_id")
+    private int postId;
+
+    @JsonProperty("parent_id")
+    private Integer parentId;
+
     private String text;
     private String decision;
+    private Long timestamp;
+    private Byte active;
+    private String title;
+    private List<String> tags;
 }

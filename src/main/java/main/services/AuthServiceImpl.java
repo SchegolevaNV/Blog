@@ -1,99 +1,123 @@
 package main.services;
-
-import main.api.requests.AuthRequestBody;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import main.api.responses.AuthResponseBody;
-import main.model.User;
 import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import main.services.interfaces.UtilitiesService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.http.HttpSession;
-import java.util.concurrent.ConcurrentHashMap;
+import java.security.Principal;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService
 {
-    private ConcurrentHashMap<String, Integer> activeSessions = new ConcurrentHashMap<>();
+    private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final EmailSenderService emailSenderService;
+    private final UtilitiesService utilitiesService;
 
-    @Autowired
-    UserRepository userRepository;
+    @Value("${link.for.recovery.password}")
+    private String link;
 
-    @Autowired
-    PostRepository postRepository;
+    @Value("${subject.for.recovery.mail}")
+    private String subject;
 
     @Override
-    public AuthResponseBody login (String email, String password)
-    {
-        User user = userRepository.findByEmail(email);
-
-        if (user != null && user.getPassword().equals(password))
-        {
-            HttpSession session = getSession();
-            activeSessions.put(session.getId(), user.getId());
+    public ResponseEntity<AuthResponseBody> login (String email, String password) {
+        main.model.User user = userRepository.findByEmail(email);
+        if (user == null || !bcryptEncoder.matches(password, user.getPassword())) {
+            log.info("User - {} not find or password - {} is wrong", email, password);
+            return ResponseEntity.ok(getFalseResult());
         }
-        else return getFalseResult();
 
-        return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        log.info("User {} was successfully logged", email);
+
+        return ResponseEntity.ok(AuthResponseBody.builder()
+                .result(true)
+                .user(getUserBody(user, postRepository))
+                .build());
     }
 
     @Override
-    public AuthResponseBody checkAuth()
+    public ResponseEntity<AuthResponseBody> checkAuth(Principal principal)
     {
-        String sessionId = getSession().getId();
-
-        if (activeSessions.containsKey(sessionId))
-        {
-            int userId = activeSessions.get(sessionId);
-            User user = userRepository.findById(userId);
-
-            return AuthResponseBody.builder().result(true).user(getUserBody(user, postRepository)).build();
+           if (principal == null) {
+               return ResponseEntity.ok(getFalseResult());
         }
-        else
-            return getFalseResult();
+        main.model.User currentUser = userRepository.findByEmail(principal.getName());
+        return ResponseEntity.ok(AuthResponseBody.builder()
+                .result(true)
+                .user(getUserBody(currentUser, postRepository))
+                .build());
     }
 
     @Override
-    public AuthResponseBody logout()
+    public ResponseEntity<AuthResponseBody> logout() {
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok(getTrueResult());
+    }
+
+    @Override
+    public ResponseEntity<AuthResponseBody> restorePassword(String email) {
+
+        main.model.User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.ok(getFalseResult());
+        }
+        else {
+            String hash = utilitiesService.getRandomHash(45);
+            link += hash;
+            user.setCode(hash);
+            userRepository.save(user);
+            emailSenderService.sendMessage(email, subject, link);
+            return ResponseEntity.ok(getTrueResult());
+        }
+    }
+
+    @Override
+    public ResponseEntity<AuthResponseBody> changePassword(String code, String password, String captcha, String captchaSecret)
     {
-        activeSessions.remove(getSession().getId());
-        return getTrueResult();
-    }
+        //code - из таблицы юзеров
+        //captcha - поле код в таблице капчи
+        //secret - поле секрет в таблице капчи
+        //капча может устареть!
 
-    @Override
-    public AuthResponseBody restorePassword(String email) {
         return null;
     }
 
     @Override
-    public AuthResponseBody changePassword(AuthRequestBody requestBody) {
+    public ResponseEntity<AuthResponseBody> signIn(String email, String password, String name, String captcha, String captchaSecret) {
         return null;
     }
 
-    @Override
-    public AuthResponseBody signIn(AuthRequestBody requestBody) {
-        return null;
+    private String getLoggedUserName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        return user.getUsername();
     }
 
-    public HttpSession getSession()
-    {
-        ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-        return attr.getRequest().getSession(true); // true == allow create
+    public boolean isUserAuthorize() {
+        return userRepository.findByEmail(getLoggedUserName()) != null;
     }
 
-    public boolean isUserAuthorize()
-    {
-        String sessionId = getSession().getId();
-        return activeSessions.containsKey(sessionId);
-    }
-
-    public int getAuthorizedUserId()
-    {
-        String sessionId = getSession().getId();
-        return activeSessions.get(sessionId);
+    public main.model.User getAuthorizedUser() {
+        return userRepository.findByEmail(getLoggedUserName());
     }
 }
 
