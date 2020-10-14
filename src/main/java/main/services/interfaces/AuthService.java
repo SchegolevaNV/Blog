@@ -1,5 +1,6 @@
 package main.services.interfaces;
 
+import main.api.responses.ApiResponseBody;
 import main.api.responses.AuthResponseBody;
 import main.model.User;
 import main.model.enums.ModerationStatus;
@@ -7,6 +8,7 @@ import main.repositories.PostRepository;
 import main.api.responses.bodies.UserBody;
 import org.springframework.http.ResponseEntity;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 public interface AuthService
@@ -14,9 +16,9 @@ public interface AuthService
     ResponseEntity<AuthResponseBody> login(String email, String password);
     ResponseEntity<AuthResponseBody> checkAuth(Principal principal);
     ResponseEntity<AuthResponseBody> logout();
-    ResponseEntity<AuthResponseBody> restorePassword(String email);
-    ResponseEntity<AuthResponseBody> changePassword(String code, String password, String captcha, String captchaSecret);
-    ResponseEntity<AuthResponseBody> signIn(String email, String password, String name, String captcha, String captchaSecret);
+    ResponseEntity<AuthResponseBody> restorePassword(String email, HttpServletRequest request);
+    ResponseEntity<ApiResponseBody> changePassword(String code, String password, String captcha, String captchaSecret);
+    ResponseEntity<ApiResponseBody> signIn(String email, String password, String name, String captcha, String captchaSecret);
 
     boolean isUserAuthorize();
     main.model.User getAuthorizedUser();

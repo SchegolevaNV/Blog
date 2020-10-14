@@ -1,12 +1,14 @@
 package main.services;
 
 import com.github.cage.YCage;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import main.api.responses.AuthResponseBody;
 import main.model.CaptchaCode;
 import main.repositories.CaptchaCodeRepository;
 import main.services.interfaces.CaptchaService;
 import main.services.interfaces.UtilitiesService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,12 +20,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 @Service
+@Data
+@RequiredArgsConstructor
+@Slf4j
 public class CaptchaServiceImpl implements CaptchaService {
-
-   // @Value("${captcha.hour:2}")
-    private LocalDateTime captchaLifetime;
 
     @Value("${captcha.width}")
     int width;
@@ -37,24 +40,28 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Value("${captcha.format}")
     String captchaFormat;
 
+    @Value("${captcha.lifetime: 1}")
+    long captchaLifetime;
+
+    @Value("${captcha.code.length}")
+    int captchaCodeLength;
+
+    @Value("${captcha.secret.code.length}")
+    int captchaSecretCodeLength;
+
     private final CaptchaCodeRepository captchaCodeRepository;
     private final UtilitiesService utilitiesService;
 
-    @Autowired
-    public CaptchaServiceImpl(CaptchaCodeRepository captchaCodeRepository,
-                              UtilitiesService utilitiesService) {
-        this.captchaCodeRepository = captchaCodeRepository;
-        this.utilitiesService = utilitiesService;
-    }
-
     @Override
-    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException {
+    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException{
 
-        String secretCode = utilitiesService.getRandomHash(22);
-        String captchaCode = utilitiesService.getRandomHash(4);
+        deleteOldCaptchas();
+        String secretCode = utilitiesService.getRandomHash(captchaSecretCodeLength);
+        String captchaCode = utilitiesService.getRandomHash(captchaCodeLength);
+        LocalDateTime time = utilitiesService.getTime();
         String code = Base64.getEncoder().encodeToString(captchaCode.getBytes());
         captchaCodeRepository.save(CaptchaCode.builder()
-                .time(LocalDateTime.now())
+                .time(time)
                 .code(code)
                 .secretCode(secretCode)
                 .build());
@@ -80,5 +87,24 @@ public class CaptchaServiceImpl implements CaptchaService {
         String result = captchaPrefix + imageCode;
 
         return ResponseEntity.ok(AuthResponseBody.builder().secret(secretCode).image(result).build());
+    }
+
+    @Override
+    public boolean checkCaptchaLifetime(String code) {
+        CaptchaCode captchaCode = captchaCodeRepository.findByCode(code);
+        LocalDateTime captchaCreateTime = captchaCode.getTime();
+        LocalDateTime currentTime = utilitiesService.getTime();
+
+        return captchaCreateTime.plusHours(captchaLifetime).isBefore(currentTime);
+    }
+
+    private void deleteOldCaptchas() {
+        LocalDateTime currentTime = utilitiesService.getTime();
+        List<CaptchaCode> oldCaptchas = captchaCodeRepository.findByTimeBefore(currentTime.minusHours(captchaLifetime));
+        log.info("Old captchas find and delete: {}", oldCaptchas.size());
+
+        for (CaptchaCode captchaCode : oldCaptchas) {
+            captchaCodeRepository.deleteById(captchaCode.getId());
+        }
     }
 }

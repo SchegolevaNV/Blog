@@ -6,4 +6,5 @@ import java.io.IOException;
 
 public interface CaptchaService {
     ResponseEntity<AuthResponseBody> getCaptcha() throws IOException;
+    boolean checkCaptchaLifetime(String code);
 }

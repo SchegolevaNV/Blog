@@ -1,7 +1,9 @@
 package main.services;
 
 import lombok.Data;
+import main.model.enums.ModerationStatus;
 import main.services.interfaces.UtilitiesService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,14 @@ import java.util.Random;
 @Service
 @Data
 public class UtilitiesServiceImpl implements UtilitiesService {
+
+    @Value("${is.active}")
+    private byte isActive;
+
+    @Value("${moderation.status}")
+    private ModerationStatus moderationStatus;
+
+    private final LocalDateTime time = LocalDateTime.now(ZoneId.of("UTC"));
 
     public final ZoneId TIME_ZONE = ZoneId.of("UTC");
     public final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
@@ -50,5 +60,17 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return (localDateTime.isBefore(LocalDateTime.now(TIME_ZONE)))
                 ? LocalDateTime.now(TIME_ZONE)
                 : localDateTime;
-        }
+    }
+
+    public byte getIsActive() {
+        return isActive;
+    }
+
+    public LocalDateTime getTime() {
+        return time;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
 }

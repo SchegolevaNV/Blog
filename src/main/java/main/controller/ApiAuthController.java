@@ -2,6 +2,7 @@ package main.controller;
 
 import lombok.RequiredArgsConstructor;
 import main.api.requests.AuthRequestBody;
+import main.api.responses.ApiResponseBody;
 import main.api.responses.AuthResponseBody;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.CaptchaService;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.Principal;
 
@@ -39,18 +41,17 @@ public class ApiAuthController {
     }
 
     @PostMapping("restore")
-    public ResponseEntity<AuthResponseBody> restorePassword(@RequestBody AuthRequestBody email)
-    {
-        return authService.restorePassword(email.getEmail());
+    public ResponseEntity<AuthResponseBody> restorePassword(@RequestBody AuthRequestBody email, HttpServletRequest request) {
+        return authService.restorePassword(email.getEmail(), request);
     }
 
     @GetMapping("captcha")
-    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException {
+    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException{
         return captchaService.getCaptcha();
     }
 
     @PostMapping("password")
-    public ResponseEntity<AuthResponseBody> changePassword(@RequestBody AuthRequestBody body)
+    public ResponseEntity<ApiResponseBody> changePassword(@RequestBody AuthRequestBody body)
     {
         return authService.changePassword(
                 body.getCode(),
@@ -60,7 +61,7 @@ public class ApiAuthController {
     }
 
     @PostMapping("register")
-    public ResponseEntity<AuthResponseBody> signIn(@RequestBody AuthRequestBody body)
+    public ResponseEntity<ApiResponseBody> signIn(@RequestBody AuthRequestBody body)
     {
         return authService.signIn(
                 body.getEmail(),
