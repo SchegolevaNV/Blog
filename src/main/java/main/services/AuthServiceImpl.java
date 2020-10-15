@@ -5,13 +5,16 @@ import main.api.responses.ApiResponseBody;
 import main.api.responses.AuthResponseBody;
 import main.api.responses.bodies.ErrorsBody;
 import main.model.CaptchaCode;
+import main.model.GlobalSettings;
 import main.model.enums.Errors;
 import main.repositories.CaptchaCodeRepository;
+import main.repositories.GlobalSettingsRepository;
 import main.repositories.PostRepository;
 import main.repositories.UserRepository;
 import main.services.interfaces.AuthService;
 import main.services.interfaces.UtilitiesService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,6 +40,7 @@ public class AuthServiceImpl implements AuthService
     private final EmailSenderService emailSenderService;
     private final UtilitiesService utilitiesService;
     private final CaptchaCodeRepository captchaCodeRepository;
+    private final GlobalSettingsRepository globalSettingsRepository;
 
     @Value("${link.prefix.for.recovery.password}")
     private String linkPrefix;
@@ -151,6 +155,10 @@ public class AuthServiceImpl implements AuthService
     @Override
     public ResponseEntity<ApiResponseBody> signIn(String email, String password, String name, String captcha,
                                                   String captchaSecret) {
+
+        GlobalSettings multiuserMode = globalSettingsRepository.findByCode("MULTIUSER_MODE");
+        if (multiuserMode.getValue().equals("NO"))
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
         main.model.User user = userRepository.findByEmail(email);
         if (user != null) {

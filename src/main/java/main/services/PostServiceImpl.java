@@ -16,7 +16,6 @@ import main.services.interfaces.AuthService;
 import main.services.interfaces.PostService;
 import main.services.interfaces.UtilitiesService;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +41,7 @@ public class PostServiceImpl implements PostService
     private final TagToPostRepository tagToPostRepository;
     private final AuthService authService;
     private final UtilitiesService utilitiesService;
+    private final GlobalSettingsRepository globalSettingsRepository;
 
     @Value("${announce.max.length}")
     private int announceMaxLength;
@@ -265,6 +265,7 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<ApiResponseBody> addPost(long timestamp, byte active, String title, List<String> tags,
                                                    String text) {
         if (authService.isUserAuthorize()) {
+            String postPremoderation = globalSettingsRepository.findByCode("POST_PREMODERATION").getValue();
             User user = authService.getAuthorizedUser();
             if (isTitleAndTextIncorrect(title, text))
                 return ResponseEntity.ok(errorResponse());
@@ -276,7 +277,9 @@ public class PostServiceImpl implements PostService
                     .text(text)
                     .title(title)
                     .viewCount(0)
-                    .moderationStatus(ModerationStatus.NEW)
+                    .moderationStatus(postPremoderation.equals("YES") && user.getIsModerator() == 0
+                            ? ModerationStatus.NEW
+                            : ModerationStatus.ACCEPTED)
                     .build());
 
             if (!tags.isEmpty())
@@ -294,6 +297,7 @@ public class PostServiceImpl implements PostService
     {
         if (authService.isUserAuthorize())
         {
+            String postPremoderation = globalSettingsRepository.findByCode("POST_PREMODERATION").getValue();
             Post post = postRepository.findById(id);
             if (post == null)
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -304,7 +308,7 @@ public class PostServiceImpl implements PostService
             User user = authService.getAuthorizedUser();
             ModerationStatus status = post.getModerationStatus();
 
-            if (post.getUser() == user && user.getIsModerator() == 0)
+            if (post.getUser() == user && user.getIsModerator() == 0 && postPremoderation.equals("YES"))
                 status = ModerationStatus.NEW;
 
                 LocalDateTime dateTime = utilitiesService.getLocalDateTimeFromTimestamp(timestamp);
