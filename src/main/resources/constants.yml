@@ -25,3 +25,7 @@ captcha.secret.code.length: 22
 
 #For registration
 name.max.length: 20
+
+#For avatar
+avatar.width: 36
+avatar.height: 36

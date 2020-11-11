@@ -1,6 +1,7 @@
 package main.controller;
 
 import lombok.RequiredArgsConstructor;
+import main.api.requests.ApiRequestBody;
 import main.api.requests.AuthRequestBody;
 import main.api.responses.ApiResponseBody;
 import main.api.responses.AuthResponseBody;
@@ -41,7 +42,7 @@ public class ApiAuthController {
     }
 
     @PostMapping("restore")
-    public ResponseEntity<AuthResponseBody> restorePassword(@RequestBody AuthRequestBody email, HttpServletRequest request) {
+    public ResponseEntity<AuthResponseBody> restorePassword(@RequestBody ApiRequestBody email, HttpServletRequest request) {
         return authService.restorePassword(email.getEmail(), request);
     }
 

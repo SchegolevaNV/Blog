@@ -1,9 +1,12 @@
 package main.services.interfaces;
 
 import main.api.requests.ApiRequestBody;
+import main.api.requests.AuthRequestBody;
 import main.api.responses.*;
 import main.model.Post;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -20,7 +23,9 @@ public interface GeneralService
     ResponseEntity<StatisticResponseBody> getAllStatistics(Principal principal);
     ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment);
     ResponseEntity<ApiResponseBody> moderation(int postId, String decision);
-    ResponseEntity<ApiResponseBody> editProfile();
+    ResponseEntity<ApiResponseBody> editProfileWithPhoto(String email, int removePhoto, MultipartFile file,
+                                                         String name,String password) throws IOException;
+    ResponseEntity<ApiResponseBody> editProfileWithoutPhoto(ApiRequestBody apiRequestBody);
     ResponseEntity imageUpload(MultipartFile file) throws IOException;
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts, UtilitiesService utilitiesService)

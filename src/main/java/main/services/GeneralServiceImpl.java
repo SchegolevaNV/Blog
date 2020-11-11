@@ -36,6 +36,7 @@ public class GeneralServiceImpl implements GeneralService {
 
     private final TagRepository tagRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
     private final PostCommentRepository postCommentRepository;
     private final AuthService authService;
     private final GlobalSettingsRepository globalSettingsRepository;
@@ -83,9 +84,9 @@ public class GeneralServiceImpl implements GeneralService {
         List<Integer> years = postRepository.getYears(isActive, moderationStatus, currentTime);
         TreeMap<String, Long> posts = new TreeMap<>();
         List<Object[]> postsInYear = postRepository.getPostCountInYearGroupByDate(isActive,
-                                                                                  moderationStatus,
-                                                                                  currentTime,
-                                                                                  Integer.parseInt(year));
+                moderationStatus,
+                currentTime,
+                Integer.parseInt(year));
         postsInYear.forEach(postInYear -> {
             String day = postInYear[1].toString();
             Long count = (Long) postInYear[0];
@@ -248,12 +249,6 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     @Override
-    public ResponseEntity<ApiResponseBody> editProfile() {
-
-        return null;
-    }
-
-    @Override
     public ResponseEntity imageUpload(MultipartFile multipartFile) throws IOException {
 
         if (authService.isUserAuthorize() && multipartFile !=null) {
@@ -280,22 +275,133 @@ public class GeneralServiceImpl implements GeneralService {
             }
 
             String[] alphabet = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-            "s", "t", "u", "v", "w", "x", "y", "z"};
+                    "s", "t", "u", "v", "w", "x", "y", "z"};
 
             Random random = new Random();
+            String newLocation = location;
 
             for (int i = 0; i < 3; i++) {
                 String folderName = alphabet[random.nextInt(25)] + alphabet[random.nextInt(25)];
-                location = location.concat("/" + folderName);
+                newLocation = newLocation.concat("/" + folderName);
             }
-            File dirs = new File(location);
+            File dirs = new File(newLocation);
             dirs.mkdirs();
             BufferedImage bufferedImage = ImageIO.read(multipartFile.getInputStream());
             File outputFile = new File(dirs + "/" + fileName);
             ImageIO.write(bufferedImage, "jpg", outputFile);
 
-            return ResponseEntity.ok(location.substring(1) + "/" + fileName);
+            return ResponseEntity.ok(newLocation + "/" + fileName);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    public ResponseEntity<ApiResponseBody> editProfileWithPhoto(String email, int removePhoto, MultipartFile file,
+                                                                String name,String password) throws IOException {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        User user = authService.getAuthorizedUser();
+        
+        if (removePhoto == 0) {
+            BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+            BufferedImage resizedAvatar = utilitiesService.imageResizer(bufferedImage);
+            String avatarName = file.getOriginalFilename();
+            File outputFile = new File(location + "/" + avatarName);
+            ImageIO.write(resizedAvatar, "jpg", outputFile);
+
+            String photo = outputFile.getPath().substring(1);
+            user.setPhoto(photo);
+        }
+
+        //TODO выделить проверки отдельно
+        if (!utilitiesService.isNameCorrect(name))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.NAME_IS_INCORRECT.getTitle())
+                            .build())
+                    .build());
+        else user.setName(name);
+
+        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.THIS_EMAIL_IS_EXIST.getTitle())
+                            .build())
+                    .build());
+        else if (!utilitiesService.isEmailCorrect(email))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.EMAIL_IS_INCORRECT.getTitle())
+                            .build())
+                    .build());
+        else user.setEmail(email);
+
+        if (password != null) {
+            if (!utilitiesService.isPasswordNotShort(password))
+                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                        .result(false)
+                        .errors(ErrorsBody.builder()
+                                .image(Errors.PASSWORD_IS_SHORT.getTitle())
+                                .build())
+                        .build());
+            else user.setPassword(utilitiesService.encodePassword(password));
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
+    }
+
+    public ResponseEntity<ApiResponseBody> editProfileWithoutPhoto(ApiRequestBody apiRequestBody) {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        User user = authService.getAuthorizedUser();
+        String name = apiRequestBody.getName();
+        String email = apiRequestBody.getEmail();
+        String password = apiRequestBody.getPassword();
+        Integer removePhoto = apiRequestBody.getRemovePhoto();
+        String photo = apiRequestBody.getPhoto();
+
+        if (!utilitiesService.isNameCorrect(name))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.NAME_IS_INCORRECT.getTitle())
+                            .build())
+                    .build());
+        else user.setName(name);
+
+        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.THIS_EMAIL_IS_EXIST.getTitle())
+                            .build())
+                    .build());
+        else if (!utilitiesService.isEmailCorrect(email))
+            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .image(Errors.EMAIL_IS_INCORRECT.getTitle())
+                            .build())
+                    .build());
+        else user.setEmail(email);
+
+        if (password != null) {
+            if (!utilitiesService.isPasswordNotShort(password))
+                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                        .result(false)
+                        .errors(ErrorsBody.builder()
+                                .image(Errors.PASSWORD_IS_SHORT.getTitle())
+                                .build())
+                        .build());
+            else user.setPassword(utilitiesService.encodePassword(password));
+        }
+        if (removePhoto != null && removePhoto == 1)
+            user.setPhoto(photo);
+
+        userRepository.save(user);
+        return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
     }
 }

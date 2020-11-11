@@ -21,7 +21,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,7 +32,6 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService
 {
-    private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
@@ -51,16 +49,11 @@ public class AuthServiceImpl implements AuthService
     @Value("${hash.length}")
     private int hashLength;
 
-    @Value("${min.password.length}")
-    private int minPasswordLength;
-
-    @Value("${name.max.length}")
-    private int nameMaxLength;
 
     @Override
     public ResponseEntity<AuthResponseBody> login (String email, String password) {
         main.model.User user = userRepository.findByEmail(email);
-        if (user == null || !bcryptEncoder.matches(password, user.getPassword())) {
+        if (user == null || !utilitiesService.isUserTypeCorrectPassword(password, user.getPassword())) {
             log.info("User - {} not find or password - {} is wrong", email, password);
             return ResponseEntity.ok(getFalseResult());
         }
@@ -138,7 +131,7 @@ public class AuthServiceImpl implements AuthService
                     .build());
         }
 
-        if (password.length() < minPasswordLength) {
+        if (utilitiesService.isPasswordNotShort(password)) {
             return ResponseEntity.ok(ApiResponseBody.builder()
                     .result(false)
                     .errors(ErrorsBody.builder()
@@ -146,7 +139,7 @@ public class AuthServiceImpl implements AuthService
                             .build())
                     .build());
         }
-        user.setPassword(bcryptEncoder.encode(password));
+        user.setPassword(utilitiesService.encodePassword(password));
         user.setCode(null);
         userRepository.save(user);
         return ResponseEntity.ok(ApiResponseBody.builder().result(true).build());
@@ -169,7 +162,16 @@ public class AuthServiceImpl implements AuthService
                             .build())
                     .build());
         }
-        if (password.length() < minPasswordLength) {
+        if (!utilitiesService.isEmailCorrect(email))
+        {
+            return ResponseEntity.ok(ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .email(Errors.EMAIL_IS_INCORRECT.getTitle())
+                            .build())
+                    .build());
+        }
+        if (utilitiesService.isPasswordNotShort(password)) {
             return ResponseEntity.ok(ApiResponseBody.builder()
                     .result(false)
                     .errors(ErrorsBody.builder()
@@ -177,7 +179,7 @@ public class AuthServiceImpl implements AuthService
                             .build())
                     .build());
         }
-        if (name.length() > nameMaxLength || !name.matches("[aA-zZаА-яЯ0-9_\\- ]+"))
+        if (!utilitiesService.isNameCorrect(name))
         {
             return ResponseEntity.ok(ApiResponseBody.builder()
                     .result(false)
@@ -199,7 +201,7 @@ public class AuthServiceImpl implements AuthService
         userRepository.save(main.model.User.builder()
                 .email(email)
                 .name(name)
-                .password(bcryptEncoder.encode(password))
+                .password(utilitiesService.encodePassword(password))
                 .isModerator((byte)0)
                 .regTime(utilitiesService.getTime())
                 .build());

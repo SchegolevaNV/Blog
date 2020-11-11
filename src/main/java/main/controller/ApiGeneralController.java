@@ -5,9 +5,6 @@ import main.api.requests.ApiRequestBody;
 import main.api.responses.*;
 import main.services.interfaces.GeneralService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +13,6 @@ import main.configuration.BlogConfig;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.Principal;
 
 @RestController
@@ -91,5 +86,23 @@ public class ApiGeneralController
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
         return generalService.imageUpload(file);
+    }
+
+    @PostMapping(value = "/profile/my", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<ApiResponseBody> editProfile(
+            @RequestParam(value = "email") String email,
+            @RequestParam(value = "removePhoto") int removePhoto,
+            @RequestParam(value = "photo") MultipartFile file,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "password", required = false) String password
+    ) throws IOException {
+        return generalService.editProfileWithPhoto(email, removePhoto, file, name, password);
+    }
+
+    @PostMapping("/profile/my")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<ApiResponseBody> editProfile(@RequestBody ApiRequestBody apiRequestBody) {
+        return generalService.editProfileWithoutPhoto(apiRequestBody);
     }
 }
