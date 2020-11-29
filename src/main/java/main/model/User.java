@@ -1,6 +1,9 @@
 package main.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import main.model.enums.Role;
 
 import javax.persistence.*;
@@ -8,7 +11,10 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "users")
 public class User {
 

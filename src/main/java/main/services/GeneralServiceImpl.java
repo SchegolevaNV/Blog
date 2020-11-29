@@ -26,7 +26,7 @@ import javax.transaction.Transactional;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -36,6 +36,7 @@ public class GeneralServiceImpl implements GeneralService {
 
     private final TagRepository tagRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
     private final PostCommentRepository postCommentRepository;
     private final AuthService authService;
     private final GlobalSettingsRepository globalSettingsRepository;
@@ -44,23 +45,25 @@ public class GeneralServiceImpl implements GeneralService {
     @Value("${storage.location}")
     private String location;
 
+    @Value("${comment.min.length}")
+    private int commentMinLength;
+
     @Override
     public ResponseEntity<TagsResponseBody> getTags(String query) {
 
-        int count = postRepository.getPostsCountByActiveAndModStatusAndTime((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
+        byte isActive = utilitiesService.getIsActive();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
+        LocalDateTime time = utilitiesService.getTime();
+
+        int count = postRepository.getPostsCountByActiveAndModStatusAndTime(isActive, moderationStatus, time);
         List<TagsBody> tags = new ArrayList<>();
         if (query == null)
             query = "";
 
         List<Tag> tagList = tagRepository.findByNameStartingWith(query);
-        for (Tag tag : tagList)
-        {
-            List<Post> posts = tag.getTagsPosts();
-            posts.removeIf(post -> post.getIsActive() != 1
-                    && post.getModerationStatus() != ModerationStatus.ACCEPTED
-                    && !post.getTime().isBefore(LocalDateTime.now()));
-
-            double weight = (double) posts.size() / (double) count;
+        for (Tag tag : tagList) {
+            int postsCount = postRepository.getTotalPostByTag(isActive, moderationStatus, time, tag.getId());
+            double weight = (double) postsCount / (double) count;
             tags.add(new TagsBody(tag.getName(), weight));
         }
         return ResponseEntity.ok(new TagsResponseBody(tags));
@@ -69,25 +72,26 @@ public class GeneralServiceImpl implements GeneralService {
     @Override
     public ResponseEntity<CalendarResponseBody> getCalendar(String year)
     {
+        LocalDateTime currentTime = utilitiesService.getTime();
+        byte isActive = utilitiesService.getIsActive();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
+
         if (year == null
                 || !year.matches("[0-9]{4}")
-                || Integer.parseInt(year) < 2015
-                || Integer.parseInt(year) > LocalDate.now().getYear())
-            year = Integer.toString(LocalDate.now().getYear());
+                || Integer.parseInt(year) > currentTime.getYear())
+            year = Integer.toString(currentTime.getYear());
 
-        List<Integer> years = postRepository.getYears((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now());
-
+        List<Integer> years = postRepository.getYears(isActive, moderationStatus, currentTime);
         TreeMap<String, Long> posts = new TreeMap<>();
-
-        List<Object[]> postsInYear = postRepository.getPostCountInYearGroupByDate((byte) 1, ModerationStatus.ACCEPTED,
-                LocalDateTime.now(), Integer.parseInt(year));
-
+        List<Object[]> postsInYear = postRepository.getPostCountInYearGroupByDate(isActive,
+                moderationStatus,
+                currentTime,
+                Integer.parseInt(year));
         postsInYear.forEach(postInYear -> {
             String day = postInYear[1].toString();
             Long count = (Long) postInYear[0];
             posts.put(day,count);
         });
-
         return ResponseEntity.ok(new CalendarResponseBody(years, posts));
     }
 
@@ -100,8 +104,7 @@ public class GeneralServiceImpl implements GeneralService {
 
         List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
 
-        for (GlobalSettings mySettings : globalSettings)
-        {
+        for (GlobalSettings mySettings : globalSettings) {
             boolean value = false;
 
             if (mySettings.getValue().equals("YES"))
@@ -152,23 +155,32 @@ public class GeneralServiceImpl implements GeneralService {
         if (authService.isUserAuthorize())
         {
             User user = authService.getAuthorizedUser();
-            List<Post> posts = postRepository.findPostsByUser((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
-                    user, Sort.by("time"));
+            byte isActive = utilitiesService.getIsActive();
+            ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
+            LocalDateTime time = utilitiesService.getTime();
+
+            List<Post> posts = postRepository.findPostsByUser(isActive, moderationStatus, time, user, Sort.by("time"));
             return new ResponseEntity<>(createStatisticResponseBody(posts, utilitiesService), HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @Override
-    public ResponseEntity<StatisticResponseBody> getAllStatistics()
+    public ResponseEntity<StatisticResponseBody> getAllStatistics(Principal principal)
     {
         GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
+        User user = principal != null ? authService.getAuthorizedUser() : null;
 
-        if (!settings.getValue().equals("YES") && !authService.isUserAuthorize())
+        if ((settings.getValue().equals("NO") && user == null)
+                || (settings.getValue().equals("NO") && user != null && user.getIsModerator() == 0)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
 
-        List<Post> posts = postRepository.findSortPosts((byte) 1, ModerationStatus.ACCEPTED, LocalDateTime.now(),
-                Sort.by("time"));
+        byte isActive = utilitiesService.getIsActive();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
+        LocalDateTime time = utilitiesService.getTime();
+
+        List<Post> posts = postRepository.findSortPosts(isActive, moderationStatus, time, Sort.by("time"));
         return new ResponseEntity<>(createStatisticResponseBody(posts, utilitiesService), HttpStatus.OK);
     }
 
@@ -181,30 +193,38 @@ public class GeneralServiceImpl implements GeneralService {
         Post post = postRepository.findById(comment.getPostId());
         User user = authService.getAuthorizedUser();
 
+        if (post == null)
+            return new ResponseEntity(Errors.POST_FOR_COMMENT_IS_NOT_EXIST.getTitle(), HttpStatus.BAD_REQUEST);
+
         if (comment.getParentId() != null) {
             int parentId = comment.getParentId();
             PostComment postComment = postCommentRepository.findById(parentId);
             if (postComment == null)
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                return new ResponseEntity(Errors.COMMENT_FOR_ANSWER_IS_NOT_EXIST.getTitle(), HttpStatus.BAD_REQUEST);
         }
 
-        if (post == null)
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
-        if (comment.getText().length() < 10) {
-            ApiResponseBody responseBody = ApiResponseBody.builder().result(false)
-                    .errors(ErrorsBody.builder().text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
-                            .build()).build();
-            return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        if (comment.getText().length() < commentMinLength) {
+            ApiResponseBody responseBody = ApiResponseBody.builder()
+                    .result(false)
+                    .errors(ErrorsBody.builder()
+                            .text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
+                            .build())
+                    .build();
+            return ResponseEntity.ok(responseBody);
         }
 
-        PostComment postComment = postCommentRepository.save(PostComment.builder().parentId(comment.getParentId())
-                .post(post).user(user).time(LocalDateTime.now()).text(comment.getText()).build());
-        return new ResponseEntity<>(ApiResponseBody.builder().id(postComment.getId()).result(true).build(), HttpStatus.OK);
+        PostComment postComment = postCommentRepository.save(PostComment.builder()
+                .parentId(comment.getParentId())
+                .post(post)
+                .user(user)
+                .time(utilitiesService.getTime())
+                .text(comment.getText())
+                .build());
+        return ResponseEntity.ok(ApiResponseBody.builder().id(postComment.getId()).result(true).build());
     }
 
     @Override
-    public ResponseEntity<ApiResponseBody>moderation(ApiRequestBody requestBody)
+    public ResponseEntity<ApiResponseBody>moderation(int postId, String decision)
     {
         if (!authService.isUserAuthorize())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -213,9 +233,9 @@ public class GeneralServiceImpl implements GeneralService {
         if (user.getIsModerator() != 1)
             return new ResponseEntity<>(ApiResponseBody.builder().result(false).build(), HttpStatus.OK);
 
-        Post post = postRepository.findById(requestBody.getPostId());
+        Post post = postRepository.findById(postId);
 
-        if (requestBody.getDecision().equals("accept"))
+        if (decision.equals("accept"))
             post.setModerationStatus(ModerationStatus.ACCEPTED);
         else post.setModerationStatus(ModerationStatus.DECLINED);
 
@@ -226,21 +246,14 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     @Override
-    public ResponseEntity<ApiResponseBody> editProfile() {
-
-        return null;
-    }
-
-    @Override
     public ResponseEntity imageUpload(MultipartFile multipartFile) throws IOException {
 
         if (authService.isUserAuthorize() && multipartFile !=null) {
 
             String fileName = multipartFile.getOriginalFilename();
-            assert fileName != null;
-            String extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+            String extension = Objects.requireNonNull(fileName).split("\\.")[1];
 
-            if (!extension.contentEquals("jpg") && !extension.contentEquals("png")) {
+            if (!extension.equalsIgnoreCase("jpg") && !extension.equalsIgnoreCase("png")) {
                 return ResponseEntity.badRequest().body(ApiResponseBody.builder()
                         .result(false)
                         .errors(ErrorsBody.builder()
@@ -259,22 +272,92 @@ public class GeneralServiceImpl implements GeneralService {
             }
 
             String[] alphabet = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-            "s", "t", "u", "v", "w", "x", "y", "z"};
+                    "s", "t", "u", "v", "w", "x", "y", "z"};
 
             Random random = new Random();
+            String newLocation = location;
 
             for (int i = 0; i < 3; i++) {
                 String folderName = alphabet[random.nextInt(25)] + alphabet[random.nextInt(25)];
-                location = location.concat("/" + folderName);
+                newLocation = newLocation.concat("/" + folderName);
             }
-            File dirs = new File(location);
+            File dirs = new File(newLocation);
             dirs.mkdirs();
             BufferedImage bufferedImage = ImageIO.read(multipartFile.getInputStream());
             File outputFile = new File(dirs + "/" + fileName);
             ImageIO.write(bufferedImage, "jpg", outputFile);
 
-            return ResponseEntity.ok(location + "/" + fileName);
+            return ResponseEntity.ok(newLocation + "/" + fileName);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    public ResponseEntity<ApiResponseBody> editProfileWithPhoto(String email, int removePhoto, MultipartFile file,
+                                                                String name,String password) throws IOException {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        User user = authService.getAuthorizedUser();
+        
+        if (removePhoto == 0) {
+            BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+            BufferedImage resizedAvatar = utilitiesService.imageResizer(bufferedImage);
+            String avatarName = file.getOriginalFilename();
+            File outputFile = new File(location + "/" + avatarName);
+            ImageIO.write(resizedAvatar, "jpg", outputFile);
+
+            String photo = outputFile.getPath().substring(1);
+            user.setPhoto(photo);
+        }
+
+        if (!utilitiesService.isNameCorrect(name))
+            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
+        else user.setName(name);
+
+        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
+            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
+        else if (!utilitiesService.isEmailCorrect(email))
+            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
+        else user.setEmail(email);
+
+        if (password != null) {
+            if (!utilitiesService.isPasswordNotShort(password))
+                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
+            else user.setPassword(utilitiesService.encodePassword(password));
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
+    }
+
+    public ResponseEntity<ApiResponseBody> editProfileWithoutPhoto(ApiRequestBody apiRequestBody) {
+        if (!authService.isUserAuthorize())
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        User user = authService.getAuthorizedUser();
+        String name = apiRequestBody.getName();
+        String email = apiRequestBody.getEmail();
+        String password = apiRequestBody.getPassword();
+        Integer removePhoto = apiRequestBody.getRemovePhoto();
+        String photo = apiRequestBody.getPhoto();
+
+        if (!utilitiesService.isNameCorrect(name))
+            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
+        else user.setName(name);
+
+        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
+            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
+        else if (!utilitiesService.isEmailCorrect(email))
+            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
+        else user.setEmail(email);
+
+        if (password != null) {
+            if (!utilitiesService.isPasswordNotShort(password))
+                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
+            else user.setPassword(utilitiesService.encodePassword(password));
+        }
+        if (removePhoto != null && removePhoto == 1)
+            user.setPhoto(photo);
+
+        userRepository.save(user);
+        return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
     }
 }

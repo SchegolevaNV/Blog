@@ -27,4 +27,9 @@ public class ApiRequestBody
     private Byte active;
     private String title;
     private List<String> tags;
+    private String email;
+    private String photo;
+    private Integer removePhoto;
+    private String password;
+    private String name;
 }

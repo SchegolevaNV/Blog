@@ -2,10 +2,17 @@ package main;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+import javax.annotation.PostConstruct;
+import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableJpaRepositories
+@EnableScheduling
+@PropertySource("classpath:constants.yml")
 @EntityScan(basePackages = {"main/model"})
 public class Main {
 
@@ -13,5 +20,9 @@ public class Main {
 
         SpringApplication.run(Main.class, args);
         System.out.println("I'm ready");
+    }
+    @PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     }
 }

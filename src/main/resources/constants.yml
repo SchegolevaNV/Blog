@@ -3,14 +3,29 @@ is.active: 1
 moderation.status: ACCEPTED
 announce.max.length: 500
 post.title.min.length: 3
-post.title.max.length: 10
+post.text.min.length: 50
+
+#For comments
+comment.min.length: 10
 
 #For recovery password
-link.for.recovery.password: /login/change-password/
+link.prefix.for.recovery.password: /login/change-password/
 subject.for.recovery.mail: password recovery
+hash.length: 45
+min.password.length: 6
 
 #For captcha
 captcha.width: 100
 captcha.height: 35
-captcha.prefix: "data:image/png;base64, "
+captcha.prefix: data:image/png;base64,
 captcha.format: png
+captcha.lifetime: 1
+captcha.code.length: 4
+captcha.secret.code.length: 22
+
+#For registration
+name.max.length: 20
+
+#For avatar
+avatar.width: 36
+avatar.height: 36

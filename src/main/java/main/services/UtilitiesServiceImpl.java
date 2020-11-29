@@ -1,9 +1,16 @@
 package main.services;
 
 import lombok.Data;
+import main.api.responses.ApiResponseBody;
+import main.api.responses.bodies.ErrorsBody;
+import main.model.enums.Errors;
 import main.services.interfaces.UtilitiesService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.awt.image.BufferedImage;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.Random;
@@ -11,6 +18,26 @@ import java.util.Random;
 @Service
 @Data
 public class UtilitiesServiceImpl implements UtilitiesService {
+
+    private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
+
+    @Value("${is.active}")
+    private byte isActive;
+
+    @Value("${moderation.status}")
+    private String moderationStatus;
+
+    @Value("${avatar.width}")
+    private int avatarWidth;
+
+    @Value("${avatar.height}")
+    private int avatarHeight;
+
+    @Value("${name.max.length}")
+    private int nameMaxLength;
+
+    @Value("${min.password.length}")
+    private int minPasswordLength;
 
     public final ZoneId TIME_ZONE = ZoneId.of("UTC");
     public final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
@@ -50,5 +77,62 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return (localDateTime.isBefore(LocalDateTime.now(TIME_ZONE)))
                 ? LocalDateTime.now(TIME_ZONE)
                 : localDateTime;
+    }
+
+    public BufferedImage imageResizer(BufferedImage image)
+    {
+        BufferedImage newImage =
+                new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
+
+        for (int x = 0; x < avatarWidth; x++) {
+            for (int y = 0; y < avatarHeight; y++) {
+                int rgb = image.getRGB(x * image.getWidth() / avatarWidth, y *  image.getHeight() / avatarHeight);
+                newImage.setRGB(x, y, rgb);
+            }
         }
+        return newImage;
+    }
+
+    public boolean isEmailCorrect(String email) {
+        return email.matches("[aA-zZ0-9_\\-\\.]+\\@[a-z0-9]+\\.[a-z]+");
+    }
+
+    public boolean isNameCorrect(String name) {
+        return name.length() < nameMaxLength || name.matches("[aA-zZаА-яЯ0-9_\\- ]+");
+    }
+
+    public boolean isPasswordNotShort(String password) {
+        return password.length() > minPasswordLength;
+    }
+
+    public String encodePassword(String password)
+    {
+        return bcryptEncoder.encode(password);
+    }
+
+    public boolean isUserTypeCorrectPassword(String typedPassword, String passwordInDatabase) {
+        return bcryptEncoder.matches(typedPassword, passwordInDatabase);
+    }
+
+    public byte getIsActive() {
+        return isActive;
+    }
+
+    public LocalDateTime getTime() {
+        return LocalDateTime.now(ZoneId.of("UTC"));
+    }
+
+    public String getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public ResponseEntity<ApiResponseBody> getErrorResponse(Errors errors)
+    {
+        return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .image(errors.getTitle())
+                        .build())
+                .build());
+    }
 }

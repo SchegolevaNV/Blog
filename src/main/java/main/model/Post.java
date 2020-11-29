@@ -70,8 +70,7 @@ public class Post
         return getPostComments().size();
     }
 
-    public int getVotesCount(String value)
-    {
+    public int getVotesCount(String value) {
         List<PostVote> postVotes = getPostVote();
 
         int likeCounts = 0;

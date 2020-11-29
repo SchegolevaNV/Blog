@@ -13,6 +13,7 @@ import main.configuration.BlogConfig;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/")
@@ -62,10 +63,9 @@ public class ApiGeneralController
     }
 
     @GetMapping("statistics/all")
-    @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity<StatisticResponseBody> getAllStatistics()
+    public ResponseEntity<StatisticResponseBody> getAllStatistics(Principal principal)
     {
-        return generalService.getAllStatistics();
+        return generalService.getAllStatistics(principal);
     }
 
     @PostMapping("comment")
@@ -79,12 +79,30 @@ public class ApiGeneralController
     @PreAuthorize("hasAuthority('user:moderator')")
     public ResponseEntity<ApiResponseBody> moderation(@RequestBody ApiRequestBody requestBody)
     {
-        return generalService.moderation(requestBody);
+        return generalService.moderation(requestBody.getPostId(), requestBody.getDecision());
     }
 
     @PostMapping(value = "image", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
         return generalService.imageUpload(file);
+    }
+
+    @PostMapping(value = "/profile/my", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<ApiResponseBody> editProfile(
+            @RequestParam(value = "email") String email,
+            @RequestParam(value = "removePhoto") int removePhoto,
+            @RequestParam(value = "photo") MultipartFile file,
+            @RequestParam(value = "name") String name,
+            @RequestParam(value = "password", required = false) String password
+    ) throws IOException {
+        return generalService.editProfileWithPhoto(email, removePhoto, file, name, password);
+    }
+
+    @PostMapping("/profile/my")
+    @PreAuthorize("hasAuthority('user:write')")
+    public ResponseEntity<ApiResponseBody> editProfile(@RequestBody ApiRequestBody apiRequestBody) {
+        return generalService.editProfileWithoutPhoto(apiRequestBody);
     }
 }
