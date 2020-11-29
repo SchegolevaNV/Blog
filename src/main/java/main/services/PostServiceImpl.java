@@ -28,7 +28,6 @@ import org.springframework.data.domain.Sort;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +59,7 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<PostWallResponseBody> getAllPosts (int offset, int limit, String mode) {
 
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         posts = getAndSortPosts(offset, limit, mode);
@@ -72,7 +71,7 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<PostWallResponseBody> searchPosts(int offset, int limit, String query) {
 
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         Pageable pageable = setPageable(offset, limit);
@@ -85,7 +84,7 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<PostWallResponseBody> getPostsByDate(int offset, int limit, String date) {
 
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         Pageable pageable = setPageable(offset, limit);
@@ -97,7 +96,7 @@ public class PostServiceImpl implements PostService
     @Override
     public ResponseEntity<PostWallResponseBody> getPostsByTag(int offset, int limit, String tag) {
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         int tagId = tagRepository.findByName(tag).getId();
@@ -345,7 +344,7 @@ public class PostServiceImpl implements PostService
 
         int page = offset/limit;
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         if (mode.equals(ModeValue.popular.toString())) {

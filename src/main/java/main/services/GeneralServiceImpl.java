@@ -52,7 +52,7 @@ public class GeneralServiceImpl implements GeneralService {
     public ResponseEntity<TagsResponseBody> getTags(String query) {
 
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         int count = postRepository.getPostsCountByActiveAndModStatusAndTime(isActive, moderationStatus, time);
@@ -74,7 +74,7 @@ public class GeneralServiceImpl implements GeneralService {
     {
         LocalDateTime currentTime = utilitiesService.getTime();
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
 
         if (year == null
                 || !year.matches("[0-9]{4}")
@@ -156,7 +156,7 @@ public class GeneralServiceImpl implements GeneralService {
         {
             User user = authService.getAuthorizedUser();
             byte isActive = utilitiesService.getIsActive();
-            ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+            ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
             LocalDateTime time = utilitiesService.getTime();
 
             List<Post> posts = postRepository.findPostsByUser(isActive, moderationStatus, time, user, Sort.by("time"));
@@ -169,10 +169,7 @@ public class GeneralServiceImpl implements GeneralService {
     public ResponseEntity<StatisticResponseBody> getAllStatistics(Principal principal)
     {
         GlobalSettings settings = globalSettingsRepository.findByCode("STATISTICS_IS_PUBLIC");
-        User user = null;
-
-        if(principal != null)
-            user = authService.getAuthorizedUser();
+        User user = principal != null ? authService.getAuthorizedUser() : null;
 
         if ((settings.getValue().equals("NO") && user == null)
                 || (settings.getValue().equals("NO") && user != null && user.getIsModerator() == 0)) {
@@ -180,7 +177,7 @@ public class GeneralServiceImpl implements GeneralService {
         }
 
         byte isActive = utilitiesService.getIsActive();
-        ModerationStatus moderationStatus = utilitiesService.getModerationStatus();
+        ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
         List<Post> posts = postRepository.findSortPosts(isActive, moderationStatus, time, Sort.by("time"));
@@ -312,40 +309,19 @@ public class GeneralServiceImpl implements GeneralService {
             user.setPhoto(photo);
         }
 
-        //TODO выделить проверки отдельно
         if (!utilitiesService.isNameCorrect(name))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.NAME_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
         else user.setName(name);
 
         if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.THIS_EMAIL_IS_EXIST.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
         else if (!utilitiesService.isEmailCorrect(email))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.EMAIL_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
         else user.setEmail(email);
 
         if (password != null) {
             if (!utilitiesService.isPasswordNotShort(password))
-                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                        .result(false)
-                        .errors(ErrorsBody.builder()
-                                .image(Errors.PASSWORD_IS_SHORT.getTitle())
-                                .build())
-                        .build());
+                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
             else user.setPassword(utilitiesService.encodePassword(password));
         }
 
@@ -364,38 +340,18 @@ public class GeneralServiceImpl implements GeneralService {
         String photo = apiRequestBody.getPhoto();
 
         if (!utilitiesService.isNameCorrect(name))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.NAME_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
         else user.setName(name);
 
         if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.THIS_EMAIL_IS_EXIST.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
         else if (!utilitiesService.isEmailCorrect(email))
-            return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .image(Errors.EMAIL_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
         else user.setEmail(email);
 
         if (password != null) {
             if (!utilitiesService.isPasswordNotShort(password))
-                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                        .result(false)
-                        .errors(ErrorsBody.builder()
-                                .image(Errors.PASSWORD_IS_SHORT.getTitle())
-                                .build())
-                        .build());
+                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
             else user.setPassword(utilitiesService.encodePassword(password));
         }
         if (removePhoto != null && removePhoto == 1)

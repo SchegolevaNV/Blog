@@ -1,9 +1,12 @@
 package main.services;
 
 import lombok.Data;
-import main.model.enums.ModerationStatus;
+import main.api.responses.ApiResponseBody;
+import main.api.responses.bodies.ErrorsBody;
+import main.model.enums.Errors;
 import main.services.interfaces.UtilitiesService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +25,7 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     private byte isActive;
 
     @Value("${moderation.status}")
-    private ModerationStatus moderationStatus;
+    private String moderationStatus;
 
     @Value("${avatar.width}")
     private int avatarWidth;
@@ -35,8 +38,6 @@ public class UtilitiesServiceImpl implements UtilitiesService {
 
     @Value("${min.password.length}")
     private int minPasswordLength;
-
-    private final LocalDateTime time = LocalDateTime.now(ZoneId.of("UTC"));
 
     public final ZoneId TIME_ZONE = ZoneId.of("UTC");
     public final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
@@ -101,7 +102,7 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     }
 
     public boolean isPasswordNotShort(String password) {
-        return password.length() < minPasswordLength;
+        return password.length() > minPasswordLength;
     }
 
     public String encodePassword(String password)
@@ -118,10 +119,20 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     }
 
     public LocalDateTime getTime() {
-        return time;
+        return LocalDateTime.now(ZoneId.of("UTC"));
     }
 
-    public ModerationStatus getModerationStatus() {
+    public String getModerationStatus() {
         return moderationStatus;
+    }
+
+    public ResponseEntity<ApiResponseBody> getErrorResponse(Errors errors)
+    {
+        return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .image(errors.getTitle())
+                        .build())
+                .build());
     }
 }
