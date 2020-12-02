@@ -1,12 +1,9 @@
 package main.services.interfaces;
 
 import main.api.requests.ApiRequestBody;
-import main.api.requests.AuthRequestBody;
 import main.api.responses.*;
 import main.model.Post;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -26,7 +23,7 @@ public interface GeneralService
     ResponseEntity<ApiResponseBody> editProfileWithPhoto(String email, int removePhoto, MultipartFile file,
                                                          String name,String password) throws IOException;
     ResponseEntity<ApiResponseBody> editProfileWithoutPhoto(ApiRequestBody apiRequestBody);
-    ResponseEntity imageUpload(MultipartFile file) throws IOException;
+    ResponseEntity<Object> imageUpload(MultipartFile file) throws IOException;
 
     default StatisticResponseBody createStatisticResponseBody(List<Post> posts, UtilitiesService utilitiesService)
     {
@@ -34,7 +31,7 @@ public interface GeneralService
         int dislikesCount = 0;
         int viewsCount = 0;
 
-        Long firstPublication = utilitiesService.getTimestampFromLocalDateTime(posts.get(0).getTime());
+        long firstPublication = utilitiesService.getTimestampFromLocalDateTime(posts.get(0).getTime());
         int postsCount = posts.size();
 
         for (Post post : posts) {

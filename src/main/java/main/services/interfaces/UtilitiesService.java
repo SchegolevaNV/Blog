@@ -1,9 +1,6 @@
 package main.services.interfaces;
-
 import main.api.responses.ApiResponseBody;
-import main.model.enums.Errors;
-import org.springframework.http.ResponseEntity;
-
+import main.api.responses.bodies.ErrorsBody;
 import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 
@@ -20,7 +17,10 @@ public interface UtilitiesService {
     boolean isPasswordNotShort(String password);
     String encodePassword(String password);
     boolean isUserTypeCorrectPassword(String typedPassword, String passwordInDatabase);
-    ResponseEntity<ApiResponseBody> getErrorResponse(Errors errors);
+    ApiResponseBody getErrorResponse(ErrorsBody errors);
+    ApiResponseBody getShortPasswordErrorResponse();
+    ApiResponseBody getIncorrectNameErrorResponse();
+    ApiResponseBody getIncorrectEmailErrorResponse();
 
     byte getIsActive();
     LocalDateTime getTime();

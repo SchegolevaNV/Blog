@@ -6,7 +6,6 @@ import main.api.responses.bodies.ErrorsBody;
 import main.model.enums.Errors;
 import main.services.interfaces.UtilitiesService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -94,7 +93,7 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     }
 
     public boolean isEmailCorrect(String email) {
-        return email.matches("[aA-zZ0-9_\\-\\.]+\\@[a-z0-9]+\\.[a-z]+");
+        return email.matches("[aA-zZ0-9_\\-.]+@[a-z0-9]+\\.[a-z]+");
     }
 
     public boolean isNameCorrect(String name) {
@@ -126,13 +125,35 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return moderationStatus;
     }
 
-    public ResponseEntity<ApiResponseBody> getErrorResponse(Errors errors)
-    {
-        return ResponseEntity.badRequest().body(ApiResponseBody.builder()
+    public ApiResponseBody getErrorResponse(ErrorsBody errors) {
+        return ApiResponseBody.builder()
+                .result(false)
+                .errors(errors)
+                .build();
+    }
+    public ApiResponseBody getShortPasswordErrorResponse() {
+        return ApiResponseBody.builder()
                 .result(false)
                 .errors(ErrorsBody.builder()
-                        .image(errors.getTitle())
+                        .password(Errors.PASSWORD_IS_SHORT.getTitle())
                         .build())
-                .build());
+                .build();
+    }
+    public ApiResponseBody getIncorrectNameErrorResponse() {
+        return ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .name(Errors.NAME_IS_INCORRECT.getTitle())
+                        .build())
+                .build();
+    }
+
+    public ApiResponseBody getIncorrectEmailErrorResponse() {
+        return ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .email(Errors.EMAIL_IS_INCORRECT.getTitle())
+                        .build())
+                .build();
     }
 }

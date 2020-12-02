@@ -29,3 +29,4 @@ name.max.length: 20
 #For avatar
 avatar.width: 36
 avatar.height: 36
+avatar.name.prefix: avatar_

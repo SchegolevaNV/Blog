@@ -1,7 +1,6 @@
 package main.services;
 
 import com.github.cage.YCage;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import main.api.responses.AuthResponseBody;
@@ -23,7 +22,6 @@ import java.util.Base64;
 import java.util.List;
 
 @Service
-@Data
 @RequiredArgsConstructor
 @Slf4j
 public class CaptchaServiceImpl implements CaptchaService {
@@ -53,8 +51,8 @@ public class CaptchaServiceImpl implements CaptchaService {
     private final UtilitiesService utilitiesService;
 
     @Override
-    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException{
-
+    public ResponseEntity<AuthResponseBody> getCaptcha()
+    {
         deleteOldCaptchas();
         String secretCode = utilitiesService.getRandomHash(captchaSecretCodeLength);
         String captchaCode = utilitiesService.getRandomHash(captchaCodeLength);
@@ -82,7 +80,6 @@ public class CaptchaServiceImpl implements CaptchaService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         String imageCode = Base64.getEncoder().encodeToString(imageBytes);
         String result = captchaPrefix + imageCode;
 
@@ -103,8 +100,6 @@ public class CaptchaServiceImpl implements CaptchaService {
         List<CaptchaCode> oldCaptchas = captchaCodeRepository.findByTimeBefore(currentTime.minusHours(captchaLifetime));
         log.info("Old captchas find and delete: {}", oldCaptchas.size());
 
-        for (CaptchaCode captchaCode : oldCaptchas) {
-            captchaCodeRepository.deleteById(captchaCode.getId());
-        }
+        oldCaptchas.forEach(captchaCode -> captchaCodeRepository.deleteById(captchaCode.getId()));
     }
 }

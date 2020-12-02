@@ -52,7 +52,8 @@ public class ApiGeneralController
     @PreAuthorize("hasAuthority('user:moderator')")
     public ResponseEntity<SettingsResponseBody> putSettings(@RequestBody SettingsResponseBody settings)
     {
-        return generalService.putSettings(settings.isMultiuserMode(), settings.isPostPremoderation(), settings.isStatisticsIsPublic());
+        return generalService.putSettings(settings.isMultiuserMode(), settings.isPostPremoderation(),
+                settings.isStatisticsIsPublic());
     }
 
     @GetMapping("statistics/my")
@@ -84,7 +85,7 @@ public class ApiGeneralController
 
     @PostMapping(value = "image", consumes = "multipart/form-data")
     @PreAuthorize("hasAuthority('user:write')")
-    public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
+    public ResponseEntity<Object> imageUpload(@RequestPart(value = "image") MultipartFile file) throws IOException {
         return generalService.imageUpload(file);
     }
 

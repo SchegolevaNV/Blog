@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.Base64;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -49,7 +50,6 @@ public class AuthServiceImpl implements AuthService
     @Value("${hash.length}")
     private int hashLength;
 
-
     @Override
     public ResponseEntity<AuthResponseBody> login (String email, String password) {
         main.model.User user = userRepository.findByEmail(email);
@@ -57,7 +57,6 @@ public class AuthServiceImpl implements AuthService
             log.info("User - {} not find or password - {} is wrong", email, password);
             return ResponseEntity.ok(getFalseResult());
         }
-
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -70,8 +69,7 @@ public class AuthServiceImpl implements AuthService
     }
 
     @Override
-    public ResponseEntity<AuthResponseBody> checkAuth(Principal principal)
-    {
+    public ResponseEntity<AuthResponseBody> checkAuth(Principal principal) {
            if (principal == null) {
                return ResponseEntity.ok(getFalseResult());
         }
@@ -91,16 +89,16 @@ public class AuthServiceImpl implements AuthService
     @Override
     public ResponseEntity<AuthResponseBody> restorePassword(String email, HttpServletRequest request) {
 
-        main.model.User user = userRepository.findByEmail(email);
-        if (user == null) {
+        Optional<main.model.User> user = Optional.ofNullable(userRepository.findByEmail(email));
+        if (user.isEmpty()) {
             return ResponseEntity.ok(getFalseResult());
         }
         else {
             String hash = utilitiesService.getRandomHash(hashLength);
             String hostName = request.getScheme() + "://" + request.getServerName() + ":"  + request.getServerPort();
             String recoveryLink = hostName + linkPrefix + hash;
-            user.setCode(hash);
-            userRepository.save(user);
+            user.get().setCode(hash);
+            userRepository.save(user.get());
             emailSenderService.sendMessage(email, subject, recoveryLink);
             log.info("Email {} was successfully sent with link: {}", email, recoveryLink);
             return ResponseEntity.ok(getTrueResult());
@@ -114,30 +112,16 @@ public class AuthServiceImpl implements AuthService
         main.model.User user = userRepository.findByCode(code);
         CaptchaCode captchaCode = captchaCodeRepository.findByCode(encodeCaptcha(captcha));
         if (user == null) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
+            return ResponseEntity.ok(utilitiesService.getErrorResponse(ErrorsBody.builder()
                             .code(Errors.CODE_IS_OUT_OF_DATE.getTitle())
-                            .build())
-                    .build());
+                            .build()));
         }
-
         if (captchaCode == null || !captchaCode.getSecretCode().equals(captchaSecret)) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .captcha(Errors.CAPTCHA_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return ResponseEntity.ok(getIncorrectCaptchaErrorResponse());
         }
 
         if (utilitiesService.isPasswordNotShort(password)) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .captcha(Errors.PASSWORD_IS_SHORT.getTitle())
-                            .build())
-                    .build());
+            return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
         }
         user.setPassword(utilitiesService.encodePassword(password));
         user.setCode(null);
@@ -155,49 +139,23 @@ public class AuthServiceImpl implements AuthService
 
         main.model.User user = userRepository.findByEmail(email);
         if (user != null) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
+            return ResponseEntity.ok(utilitiesService.getErrorResponse(ErrorsBody.builder()
                             .email(Errors.THIS_EMAIL_IS_EXIST.getTitle())
-                            .build())
-                    .build());
+                            .build()));
         }
         if (!utilitiesService.isEmailCorrect(email))
-        {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .email(Errors.EMAIL_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
-        }
-        if (utilitiesService.isPasswordNotShort(password)) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .captcha(Errors.PASSWORD_IS_SHORT.getTitle())
-                            .build())
-                    .build());
-        }
+            return ResponseEntity.ok(utilitiesService.getIncorrectEmailErrorResponse());
+
+        if (utilitiesService.isPasswordNotShort(password))
+            return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
+
         if (!utilitiesService.isNameCorrect(name))
-        {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .captcha(Errors.NAME_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
-        }
+            return ResponseEntity.ok(utilitiesService.getIncorrectNameErrorResponse());
+
         CaptchaCode captchaCode = captchaCodeRepository.findByCode(encodeCaptcha(captcha));
         if (captchaCode == null || !captchaCode.getSecretCode().equals(captchaSecret)) {
-            return ResponseEntity.ok(ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .captcha(Errors.CAPTCHA_IS_INCORRECT.getTitle())
-                            .build())
-                    .build());
+            return ResponseEntity.ok(getIncorrectCaptchaErrorResponse());
         }
-
         userRepository.save(main.model.User.builder()
                 .email(email)
                 .name(name)
@@ -225,6 +183,15 @@ public class AuthServiceImpl implements AuthService
 
     private String encodeCaptcha(String captcha) {
         return Base64.getEncoder().encodeToString(captcha.getBytes());
+    }
+
+    private ApiResponseBody getIncorrectCaptchaErrorResponse() {
+        return ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .captcha(Errors.CAPTCHA_IS_INCORRECT.getTitle())
+                        .build())
+                .build();
     }
 }
 
