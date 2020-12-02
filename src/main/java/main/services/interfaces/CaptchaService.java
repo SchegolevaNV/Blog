@@ -2,9 +2,7 @@ package main.services.interfaces;
 import main.api.responses.AuthResponseBody;
 import org.springframework.http.ResponseEntity;
 
-import java.io.IOException;
-
 public interface CaptchaService {
-    ResponseEntity<AuthResponseBody> getCaptcha() throws IOException;
+    ResponseEntity<AuthResponseBody> getCaptcha();
     boolean checkCaptchaLifetime(String code);
 }

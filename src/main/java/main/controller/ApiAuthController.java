@@ -12,7 +12,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.security.Principal;
 
 @RestController
@@ -47,7 +46,7 @@ public class ApiAuthController {
     }
 
     @GetMapping("captcha")
-    public ResponseEntity<AuthResponseBody> getCaptcha() throws IOException{
+    public ResponseEntity<AuthResponseBody> getCaptcha() {
         return captchaService.getCaptcha();
     }
 

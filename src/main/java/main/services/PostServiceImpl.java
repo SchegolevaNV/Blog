@@ -110,11 +110,7 @@ public class PostServiceImpl implements PostService
     @Override
     public ResponseEntity<PostResponseBody> getPostById(int id, Principal principal)
     {
-        User user = null;
-        if (principal != null) {
-            user = authService.getAuthorizedUser();
-        }
-
+        User user = principal != null ? authService.getAuthorizedUser() : null;
         Post post = postRepository.findById(id);
         if (post == null)
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -123,9 +119,7 @@ public class PostServiceImpl implements PostService
         List<String> tags = new ArrayList<>();
 
         List<Tag> tagList = post.getPostTags();
-        for (Tag tag : tagList) {
-            tags.add(tag.getName());
-        }
+        tagList.forEach(tag -> tags.add(tag.getName()));
 
         List<PostComment> comments = post.getPostComments();
         for(PostComment comment : comments) {
@@ -147,7 +141,6 @@ public class PostServiceImpl implements PostService
             post.setViewCount(viewCount + 1);
             postRepository.save(post);
         }
-
         PostResponseBody postResponseBody = createPostResponseBody(post);
         postResponseBody.setComments(commentBodies);
         postResponseBody.setTags(tags);
@@ -188,7 +181,6 @@ public class PostServiceImpl implements PostService
         if (authService.isUserAuthorize())
         {
             byte isActive = utilitiesService.getIsActive();
-
             User user = authService.getAuthorizedUser();
             Pageable pageable = setPageable(offset, limit);
             if (status.equals("inactive")) {
@@ -202,7 +194,6 @@ public class PostServiceImpl implements PostService
                     status = ModerationStatus.ACCEPTED.toString();
                 if (status.equals("declined"))
                     status = ModerationStatus.DECLINED.toString();
-
 
                 posts = postRepository.findByIsActiveAndModerationStatusAndUser(isActive,
                         ModerationStatus.valueOf(status), user, pageable);
@@ -246,8 +237,7 @@ public class PostServiceImpl implements PostService
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();
 
-            if (postVote != null)
-            {
+            if (postVote != null) {
                 if (postVote.getValue() == -1) {
                     return ResponseEntity.ok(ApiResponseBody.builder().result(false).build());
                 }
@@ -295,8 +285,7 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<ApiResponseBody> editPost(int id, long timestamp, byte active, String title,
                                                     List<String> tags, String text)
     {
-        if (authService.isUserAuthorize())
-        {
+        if (authService.isUserAuthorize()) {
             String postPremoderation = globalSettingsRepository.findByCode("POST_PREMODERATION").getValue();
             Post post = postRepository.findById(id);
             if (post == null)
@@ -400,10 +389,9 @@ public class PostServiceImpl implements PostService
 
     private String getAnnounce(Post post) {
         String announce = Jsoup.parse(post.getText()).text();
-        if (announce.length() > announceMaxLength) {
-            announce = announce.substring(0, announceMaxLength - 1) + "...";
-        }
-        return announce;
+        return (announce.length() > announceMaxLength)
+                ? announce.substring(0, announceMaxLength - 1) + "..."
+                : announce;
     }
 
     private boolean isTitleAndTextIncorrect(String title, String text) {
@@ -418,7 +406,6 @@ public class PostServiceImpl implements PostService
                 .title(Errors.TITLE_IS_NOT_SET_OR_SHORT.getTitle())
                 .text(Errors.TEXT_IS_NOT_SET_OT_SHORT.getTitle())
                 .build();
-
         return ApiResponseBody.builder().result(false).errors(error).build();
     }
 

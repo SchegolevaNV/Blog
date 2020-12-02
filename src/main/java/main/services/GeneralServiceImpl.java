@@ -48,6 +48,9 @@ public class GeneralServiceImpl implements GeneralService {
     @Value("${comment.min.length}")
     private int commentMinLength;
 
+    @Value("${avatar.name.prefix}")
+    private String avatarPrefix;
+
     @Override
     public ResponseEntity<TagsResponseBody> getTags(String query) {
 
@@ -104,12 +107,9 @@ public class GeneralServiceImpl implements GeneralService {
 
         List<GlobalSettings> globalSettings = globalSettingsRepository.findAll();
 
-        for (GlobalSettings mySettings : globalSettings) {
-            boolean value = false;
-
-            if (mySettings.getValue().equals("YES"))
-                value = true;
-
+        for (GlobalSettings mySettings : globalSettings)
+        {
+            boolean value = mySettings.getValue().equals("YES");
             if (mySettings.getCode().equals(Settings.MULTIUSER_MODE.toString()))
                 multiuserMode = value;
             if (mySettings.getCode().equals(Settings.POST_PREMODERATION.toString()))
@@ -122,8 +122,8 @@ public class GeneralServiceImpl implements GeneralService {
 
     @Override
     @Transactional
-    public ResponseEntity<SettingsResponseBody> putSettings(boolean multiuserMode, boolean postPremoderation, boolean statisticsIsPublic)
-    {
+    public ResponseEntity<SettingsResponseBody> putSettings(boolean multiuserMode,
+                                                            boolean postPremoderation, boolean statisticsIsPublic) {
         String value = "NO";
         HashMap<String, Boolean> codes = new HashMap<>();
         codes.put(Settings.MULTIUSER_MODE.toString(), multiuserMode);
@@ -138,7 +138,6 @@ public class GeneralServiceImpl implements GeneralService {
                     if (isCodeExist) {
                         value = "YES";
                     }
-
                     GlobalSettings settings = globalSettingsRepository.findByCode(code.getKey());
                     settings.setValue(value);
                     globalSettingsRepository.save(settings);
@@ -146,14 +145,13 @@ public class GeneralServiceImpl implements GeneralService {
                 return ResponseEntity.ok(new SettingsResponseBody(multiuserMode, postPremoderation, statisticsIsPublic));
             }
         }
-        return null;
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @Override
     public ResponseEntity<StatisticResponseBody> getMyStatistics()
     {
-        if (authService.isUserAuthorize())
-        {
+        if (authService.isUserAuthorize()) {
             User user = authService.getAuthorizedUser();
             byte isActive = utilitiesService.getIsActive();
             ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
@@ -204,15 +202,10 @@ public class GeneralServiceImpl implements GeneralService {
         }
 
         if (comment.getText().length() < commentMinLength) {
-            ApiResponseBody responseBody = ApiResponseBody.builder()
-                    .result(false)
-                    .errors(ErrorsBody.builder()
-                            .text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
-                            .build())
-                    .build();
-            return ResponseEntity.ok(responseBody);
+            return ResponseEntity.ok(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                    .text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
+                    .build()));
         }
-
         PostComment postComment = postCommentRepository.save(PostComment.builder()
                 .parentId(comment.getParentId())
                 .post(post)
@@ -246,47 +239,36 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     @Override
-    public ResponseEntity imageUpload(MultipartFile multipartFile) throws IOException {
+    public ResponseEntity<Object> imageUpload(MultipartFile multipartFile) throws IOException {
 
-        if (authService.isUserAuthorize() && multipartFile !=null) {
+        if (authService.isUserAuthorize() && multipartFile != null) {
 
             String fileName = multipartFile.getOriginalFilename();
             String extension = Objects.requireNonNull(fileName).split("\\.")[1];
+            fileName = utilitiesService.getRandomHash(6) + "." + extension;
 
             if (!extension.equalsIgnoreCase("jpg") && !extension.equalsIgnoreCase("png")) {
-                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                        .result(false)
-                        .errors(ErrorsBody.builder()
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                                 .image(Errors.IMAGE_INVALID_FORMAT.getTitle())
-                                .build())
-                        .build());
+                                .build()));
             }
-
             if (multipartFile.getSize() > 5_000_000) {
-                return ResponseEntity.badRequest().body(ApiResponseBody.builder()
-                        .result(false)
-                        .errors(ErrorsBody.builder()
-                                .image(Errors.IMAGE_IS_BIG.getTitle())
-                                .build())
-                        .build());
+                return ResponseEntity.badRequest().body(getBigImageErrorResponse());
             }
-
             String[] alphabet = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
                     "s", "t", "u", "v", "w", "x", "y", "z"};
-
-            Random random = new Random();
             String newLocation = location;
 
             for (int i = 0; i < 3; i++) {
-                String folderName = alphabet[random.nextInt(25)] + alphabet[random.nextInt(25)];
+                String folderName = alphabet[new Random().nextInt(25)] + alphabet[new Random().nextInt(25)];
                 newLocation = newLocation.concat("/" + folderName);
             }
             File dirs = new File(newLocation);
-            dirs.mkdirs();
-            BufferedImage bufferedImage = ImageIO.read(multipartFile.getInputStream());
-            File outputFile = new File(dirs + "/" + fileName);
-            ImageIO.write(bufferedImage, "jpg", outputFile);
-
+            if (dirs.mkdirs()) {
+                BufferedImage bufferedImage = ImageIO.read(multipartFile.getInputStream());
+                File outputFile = new File(String.format("%s/%s", dirs, fileName));
+                ImageIO.write(bufferedImage, extension, outputFile);
+            }
             return ResponseEntity.ok(newLocation + "/" + fileName);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -296,35 +278,40 @@ public class GeneralServiceImpl implements GeneralService {
                                                                 String name,String password) throws IOException {
         if (!authService.isUserAuthorize())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+
         User user = authService.getAuthorizedUser();
-        
+        if (file.getSize() > 5_000_000) {
+            return ResponseEntity.badRequest().body(getBigImageErrorResponse());
+        }
         if (removePhoto == 0) {
+            String avatarName = file.getOriginalFilename();
+            String extension = Objects.requireNonNull(avatarName).split("\\.")[1];
+            avatarName = avatarPrefix + utilitiesService.getRandomHash(6) + "." + extension;
             BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
             BufferedImage resizedAvatar = utilitiesService.imageResizer(bufferedImage);
-            String avatarName = file.getOriginalFilename();
-            File outputFile = new File(location + "/" + avatarName);
-            ImageIO.write(resizedAvatar, "jpg", outputFile);
-
+            File outputFile = new File(String.format("%s/%s", location, avatarName));
+            ImageIO.write(resizedAvatar, extension, outputFile);
             String photo = outputFile.getPath().substring(1);
             user.setPhoto(photo);
         }
-
         if (!utilitiesService.isNameCorrect(name))
-            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
+            return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                    .name(Errors.NAME_IS_INCORRECT.getTitle())
+                    .build()));
         else user.setName(name);
 
-        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
-            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
-        else if (!utilitiesService.isEmailCorrect(email))
-            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
-        else user.setEmail(email);
+        if (!email.equals(user.getEmail()))
+            return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                    .email(Errors.EMAIL_IS_INCORRECT.getTitle())
+                    .build()));
 
         if (password != null) {
             if (!utilitiesService.isPasswordNotShort(password))
-                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                        .password(Errors.PASSWORD_IS_SHORT.getTitle())
+                        .build()));
             else user.setPassword(utilitiesService.encodePassword(password));
         }
-
         userRepository.save(user);
         return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
     }
@@ -332,6 +319,7 @@ public class GeneralServiceImpl implements GeneralService {
     public ResponseEntity<ApiResponseBody> editProfileWithoutPhoto(ApiRequestBody apiRequestBody) {
         if (!authService.isUserAuthorize())
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+
         User user = authService.getAuthorizedUser();
         String name = apiRequestBody.getName();
         String email = apiRequestBody.getEmail();
@@ -339,19 +327,22 @@ public class GeneralServiceImpl implements GeneralService {
         Integer removePhoto = apiRequestBody.getRemovePhoto();
         String photo = apiRequestBody.getPhoto();
 
-        if (!utilitiesService.isNameCorrect(name))
-            return utilitiesService.getErrorResponse(Errors.NAME_IS_INCORRECT);
-        else user.setName(name);
+        if (!email.equals(user.getEmail()))
+            return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                    .email(Errors.EMAIL_IS_INCORRECT.getTitle())
+                    .build()));
 
-        if (userRepository.findByEmail(email) != null && !email.equals(user.getEmail()))
-            return utilitiesService.getErrorResponse(Errors.THIS_EMAIL_IS_EXIST);
-        else if (!utilitiesService.isEmailCorrect(email))
-            return utilitiesService.getErrorResponse(Errors.EMAIL_IS_INCORRECT);
-        else user.setEmail(email);
+        if (!utilitiesService.isNameCorrect(name))
+            return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                    .name(Errors.NAME_IS_INCORRECT.getTitle())
+                    .build()));
+        else user.setName(name);
 
         if (password != null) {
             if (!utilitiesService.isPasswordNotShort(password))
-                return utilitiesService.getErrorResponse(Errors.PASSWORD_IS_SHORT);
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                        .password(Errors.PASSWORD_IS_SHORT.getTitle())
+                        .build()));
             else user.setPassword(utilitiesService.encodePassword(password));
         }
         if (removePhoto != null && removePhoto == 1)
@@ -359,5 +350,14 @@ public class GeneralServiceImpl implements GeneralService {
 
         userRepository.save(user);
         return ResponseEntity.ok().body(ApiResponseBody.builder().result(true).build());
+    }
+
+    private ApiResponseBody getBigImageErrorResponse() {
+        return ApiResponseBody.builder()
+                .result(false)
+                .errors(ErrorsBody.builder()
+                        .image(Errors.IMAGE_IS_BIG.getTitle())
+                        .build())
+                .build();
     }
 }

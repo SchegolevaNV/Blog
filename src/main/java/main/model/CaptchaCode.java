@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
 @Builder
 @Entity
 @Table(name = "captcha_codes")
