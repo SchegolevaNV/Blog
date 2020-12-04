@@ -12,7 +12,7 @@ public class ImageUploadConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry
                 .addResourceHandler("/upload/**", "/js/**", "/css/**", "/fonts/**", "/img/**",
-                        "/templates/**", "/post/upload/**")
+                        "/templates/**", "/post/upload/**", "/edit/upload/**")
                 .addResourceLocations(
                         "file:upload/",
                         "classpath:static/js/",
