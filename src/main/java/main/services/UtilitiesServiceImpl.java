@@ -82,7 +82,6 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     {
         BufferedImage newImage =
                 new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
-
         for (int x = 0; x < avatarWidth; x++) {
             for (int y = 0; y < avatarHeight; y++) {
                 int rgb = image.getRGB(x * image.getWidth() / avatarWidth, y *  image.getHeight() / avatarHeight);

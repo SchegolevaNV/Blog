@@ -211,6 +211,10 @@ public class PostServiceImpl implements PostService
         {
             User user = authService.getAuthorizedUser();
             Post post = postRepository.findById(postId);
+
+            if (post.getUser() == user)
+                return ResponseEntity.ok(ApiResponseBody.builder().result(true).build());
+
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();
 
@@ -234,6 +238,10 @@ public class PostServiceImpl implements PostService
         {
             User user = authService.getAuthorizedUser();
             Post post = postRepository.findById(postId);
+
+            if (post.getUser() == user)
+                return ResponseEntity.ok(ApiResponseBody.builder().result(true).build());
+
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();
 
