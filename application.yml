@@ -1,4 +1,4 @@
-spring.datasource.url: jdbc:${CLEARDB_DATABASE_URL:postgresql://localhost:5432/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
+spring.datasource.url: jdbc:${DATABASE_URL:postgresql://localhost:5432/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
 spring.datasource.username: postgres
 spring.datasource.password: pass
 spring.jpa.hibernate.ddl-auto: validate
