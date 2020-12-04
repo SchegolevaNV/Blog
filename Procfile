@@ -1,0 +1,1 @@
+web: java -jar target/Diploma-1.0.jar
