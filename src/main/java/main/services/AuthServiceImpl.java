@@ -120,7 +120,7 @@ public class AuthServiceImpl implements AuthService
             return ResponseEntity.ok(getIncorrectCaptchaErrorResponse());
         }
 
-        if (utilitiesService.isPasswordNotShort(password)) {
+        if (!utilitiesService.isPasswordNotShort(password)) {
             return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
         }
         user.setPassword(utilitiesService.encodePassword(password));
@@ -146,7 +146,7 @@ public class AuthServiceImpl implements AuthService
         if (!utilitiesService.isEmailCorrect(email))
             return ResponseEntity.ok(utilitiesService.getIncorrectEmailErrorResponse());
 
-        if (utilitiesService.isPasswordNotShort(password))
+        if (!utilitiesService.isPasswordNotShort(password))
             return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
 
         if (!utilitiesService.isNameCorrect(name))

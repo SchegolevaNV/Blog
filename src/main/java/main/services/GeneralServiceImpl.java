@@ -124,7 +124,6 @@ public class GeneralServiceImpl implements GeneralService {
     @Transactional
     public ResponseEntity<SettingsResponseBody> putSettings(boolean multiuserMode,
                                                             boolean postPremoderation, boolean statisticsIsPublic) {
-        String value = "NO";
         HashMap<String, Boolean> codes = new HashMap<>();
         codes.put(Settings.MULTIUSER_MODE.toString(), multiuserMode);
         codes.put(Settings.POST_PREMODERATION.toString(), postPremoderation);
@@ -134,6 +133,7 @@ public class GeneralServiceImpl implements GeneralService {
             User user = authService.getAuthorizedUser();
             if (user.getIsModerator() == 1) {
                 for (Map.Entry<String, Boolean> code : codes.entrySet()) {
+                    String value = "NO";
                     boolean isCodeExist = code.getValue();
                     if (isCodeExist) {
                         value = "YES";

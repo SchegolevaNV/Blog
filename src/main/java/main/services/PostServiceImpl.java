@@ -99,10 +99,16 @@ public class PostServiceImpl implements PostService
         ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
-        int tagId = tagRepository.findByName(tag).getId();
+        Tag myTag = tagRepository.findByName(tag);
+        if (myTag == null) {
+            count = 0;
+            posts = new ArrayList<>();
+            return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
+        }
+
         Pageable pageable = setPageable(offset, limit);
-        count = postRepository.getTotalPostByTag(isActive, moderationStatus, time, tagId);
-        posts = postRepository.findAllPostByTag(isActive, moderationStatus, time, tagId, pageable);
+        count = postRepository.getTotalPostByTag(isActive, moderationStatus, time, myTag.getId());
+        posts = postRepository.findAllPostByTag(isActive, moderationStatus, time, myTag.getId(), pageable);
 
         return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
     }
