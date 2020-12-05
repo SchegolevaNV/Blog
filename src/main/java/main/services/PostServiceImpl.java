@@ -213,7 +213,7 @@ public class PostServiceImpl implements PostService
             Post post = postRepository.findById(postId);
 
             if (post.getUser() == user)
-                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(Errors.YOU_WRONG.getTitle(), HttpStatus.BAD_REQUEST);
 
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();
@@ -240,7 +240,7 @@ public class PostServiceImpl implements PostService
             Post post = postRepository.findById(postId);
 
             if (post.getUser() == user)
-                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity(Errors.YOU_WRONG.getTitle(), HttpStatus.BAD_REQUEST);
 
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();

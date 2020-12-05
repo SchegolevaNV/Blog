@@ -18,6 +18,7 @@ public enum Errors
     EMAIL_IS_INCORRECT("E-mail указан неверно"),
     USER_IS_NOT_MODERATOR("Вы не являетесь модератором"),
     IMAGE_INVALID_FORMAT("Изображение должно быть формата JPG/PNG"),
+    YOU_WRONG("Вы не можете оценивать свой собственный пост"),
     IMAGE_INVALID_NAME("Название файла должно содержать только латинские буквы, цифры и знаки подчёркивания");
 
     private String title;
