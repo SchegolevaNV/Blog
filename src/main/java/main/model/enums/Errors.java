@@ -16,7 +16,6 @@ public enum Errors
     THIS_EMAIL_IS_EXIST("Этот e-mail уже зарегистрирован"),
     NAME_IS_INCORRECT("Имя указано неверно"),
     EMAIL_IS_INCORRECT("E-mail указан неверно"),
-    USER_IS_NOT_MODERATOR("Вы не являетесь модератором"),
     IMAGE_INVALID_FORMAT("Изображение должно быть формата JPG/PNG"),
     YOU_WRONG("Вы не можете оценивать свой собственный пост"),
     IMAGE_INVALID_NAME("Название файла должно содержать только латинские буквы, цифры и знаки подчёркивания");

@@ -105,7 +105,6 @@ public class PostServiceImpl implements PostService
             posts = new ArrayList<>();
             return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
         }
-
         Pageable pageable = setPageable(offset, limit);
         count = postRepository.getTotalPostByTag(isActive, moderationStatus, time, myTag.getId());
         posts = postRepository.findAllPostByTag(isActive, moderationStatus, time, myTag.getId(), pageable);
@@ -161,23 +160,21 @@ public class PostServiceImpl implements PostService
     public ResponseEntity<PostWallResponseBody> getPostsForModeration(int offset, int limit, String status) {
         if (authService.isUserAuthorize()) {
             User user = authService.getAuthorizedUser();
-            if (user.getIsModerator() != 1)
-                return new ResponseEntity(Errors.USER_IS_NOT_MODERATOR.getTitle(), HttpStatus.BAD_REQUEST);
+            if (user.getIsModerator() == 1) {
+                ModerationStatus modStatus = ModerationStatus.valueOf(status.toUpperCase());
+                Pageable pageable = setPageable(offset, limit);
+                byte isActive = utilitiesService.getIsActive();
 
-            ModerationStatus modStatus = ModerationStatus.valueOf(status.toUpperCase());
-            Pageable pageable = setPageable(offset, limit);
-            byte isActive = utilitiesService.getIsActive();
-
-            if (modStatus.toString().equals("NEW")) {
-                posts = postRepository.findByModerationStatusAndIsActive(modStatus, isActive, pageable);
-                count = postRepository.getPostsCountByActiveAndModStatus(isActive, modStatus);
+                if (modStatus.toString().equals("NEW")) {
+                    posts = postRepository.findByModerationStatusAndIsActive(modStatus, isActive, pageable);
+                    count = postRepository.getPostsCountByActiveAndModStatus(isActive, modStatus);
+                } else {
+                    posts = postRepository.findByModerationStatusAndIsActiveAndModeratorId(
+                            modStatus, isActive, user.getId(), pageable);
+                    count = postRepository.getTotalPostsByModerator(isActive, modStatus, user.getId());
+                }
+                return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
             }
-            else {
-                posts = postRepository.findByModerationStatusAndIsActiveAndModeratorId(
-                        modStatus, isActive, user.getId(), pageable);
-                count = postRepository.getTotalPostsByModerator(isActive, modStatus, user.getId());
-            }
-            return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
         }
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
@@ -219,7 +216,9 @@ public class PostServiceImpl implements PostService
             Post post = postRepository.findById(postId);
 
             if (post.getUser() == user)
-                return new ResponseEntity(Errors.YOU_WRONG.getTitle(), HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                                .text(Errors.YOU_WRONG.getTitle())
+                                .build()));
 
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();
@@ -246,7 +245,9 @@ public class PostServiceImpl implements PostService
             Post post = postRepository.findById(postId);
 
             if (post.getUser() == user)
-                return new ResponseEntity(Errors.YOU_WRONG.getTitle(), HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                        .text(Errors.YOU_WRONG.getTitle())
+                        .build()));
 
             PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
             LocalDateTime time = utilitiesService.getTime();

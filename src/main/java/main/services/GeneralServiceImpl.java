@@ -183,8 +183,7 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     @Override
-    public ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment)
-    {
+    public ResponseEntity<ApiResponseBody> addComment(ApiRequestBody comment) {
         if (!authService.isUserAuthorize())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
@@ -192,15 +191,18 @@ public class GeneralServiceImpl implements GeneralService {
         User user = authService.getAuthorizedUser();
 
         if (post == null)
-            return new ResponseEntity(Errors.POST_FOR_COMMENT_IS_NOT_EXIST.getTitle(), HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                            .text(Errors.POST_FOR_COMMENT_IS_NOT_EXIST.getTitle())
+                            .build()));
 
         if (comment.getParentId() != null) {
             int parentId = comment.getParentId();
             PostComment postComment = postCommentRepository.findById(parentId);
             if (postComment == null)
-                return new ResponseEntity(Errors.COMMENT_FOR_ANSWER_IS_NOT_EXIST.getTitle(), HttpStatus.BAD_REQUEST);
+                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
+                                .text(Errors.COMMENT_FOR_ANSWER_IS_NOT_EXIST.getTitle())
+                                .build()));
         }
-
         if (comment.getText().length() < commentMinLength) {
             return ResponseEntity.ok(utilitiesService.getErrorResponse(ErrorsBody.builder()
                     .text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
