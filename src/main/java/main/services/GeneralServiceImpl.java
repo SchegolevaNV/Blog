@@ -64,10 +64,28 @@ public class GeneralServiceImpl implements GeneralService {
             query = "";
 
         List<Tag> tagList = tagRepository.findByNameStartingWith(query);
+        HashMap<Tag, Double> tagsWeightMap = new HashMap<>();
         for (Tag tag : tagList) {
             int postsCount = postRepository.getTotalPostByTag(isActive, moderationStatus, time, tag.getId());
             double weight = (double) postsCount / (double) count;
-            tags.add(new TagsBody(tag.getName(), weight));
+            tagsWeightMap.put(tag, weight);
+        }
+        double maxWeight = 0.0;
+        double rate;
+        if (!tagsWeightMap.isEmpty())
+            maxWeight = tagsWeightMap.values().stream().max(Double::compareTo).get();
+
+        if (maxWeight == 0.0)
+            return ResponseEntity.ok(new TagsResponseBody(tags));
+        else rate = 1 / maxWeight;
+
+        for(Map.Entry<Tag,Double> entry : tagsWeightMap.entrySet()) {
+            if (entry.getValue() != maxWeight) {
+                double weight = entry.getValue() * rate;
+                Tag tag = entry.getKey();
+                tags.add(new TagsBody(tag.getName(), weight));
+            }
+            else tags.add(new TagsBody(entry.getKey().getName(), 1));
         }
         return ResponseEntity.ok(new TagsResponseBody(tags));
     }
@@ -246,7 +264,8 @@ public class GeneralServiceImpl implements GeneralService {
         if (authService.isUserAuthorize() && multipartFile != null) {
 
             String fileName = multipartFile.getOriginalFilename();
-            String extension = Objects.requireNonNull(fileName).split("\\.")[1];
+            int indexOfPoint = Objects.requireNonNull(fileName).lastIndexOf(".") + 1;
+            String extension = Objects.requireNonNull(fileName).substring(indexOfPoint);
             fileName = utilitiesService.getRandomHash(6) + "." + extension;
 
             if (!extension.equalsIgnoreCase("jpg") && !extension.equalsIgnoreCase("png")) {
@@ -287,7 +306,8 @@ public class GeneralServiceImpl implements GeneralService {
         }
         if (removePhoto == 0) {
             String avatarName = file.getOriginalFilename();
-            String extension = Objects.requireNonNull(avatarName).split("\\.")[1];
+            int indexOfPoint = Objects.requireNonNull(avatarName).lastIndexOf(".") + 1;
+            String extension = Objects.requireNonNull(avatarName).substring(indexOfPoint);
             avatarName = avatarPrefix + utilitiesService.getRandomHash(6) + "." + extension;
             BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
             BufferedImage resizedAvatar = utilitiesService.imageResizer(bufferedImage);

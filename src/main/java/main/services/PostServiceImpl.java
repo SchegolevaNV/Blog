@@ -208,10 +208,9 @@ public class PostServiceImpl implements PostService
     }
 
     @Override
-    public ResponseEntity<ApiResponseBody> postLike(int postId)
+    public ResponseEntity<ApiResponseBody> postLikeOrDislike(int postId, byte usersPostVote)
     {
-        if (authService.isUserAuthorize())
-        {
+        if (authService.isUserAuthorize()) {
             User user = authService.getAuthorizedUser();
             Post post = postRepository.findById(postId);
 
@@ -224,42 +223,13 @@ public class PostServiceImpl implements PostService
             LocalDateTime time = utilitiesService.getTime();
 
             if (postVote != null) {
-                if (postVote.getValue() == 1) {
+                if (postVote.getValue() == usersPostVote) {
                     return ResponseEntity.ok(ApiResponseBody.builder().result(false).build());
                 }
                 else postVoteRepository.deleteById(postVote.getId());
             }
             postVoteRepository.save(PostVote.builder()
-                    .user(user).post(post).time(time).value((byte)1).build());
-
-            return ResponseEntity.ok(ApiResponseBody.builder().result(true).build());
-        }
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-    }
-
-    @Override
-    public ResponseEntity<ApiResponseBody> postDislike(int postId) {
-        if (authService.isUserAuthorize())
-        {
-            User user = authService.getAuthorizedUser();
-            Post post = postRepository.findById(postId);
-
-            if (post.getUser() == user)
-                return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
-                        .text(Errors.YOU_WRONG.getTitle())
-                        .build()));
-
-            PostVote postVote = postVoteRepository.findByPostAndUser(post, user);
-            LocalDateTime time = utilitiesService.getTime();
-
-            if (postVote != null) {
-                if (postVote.getValue() == -1) {
-                    return ResponseEntity.ok(ApiResponseBody.builder().result(false).build());
-                }
-                else postVoteRepository.deleteById(postVote.getId());
-            }
-            postVoteRepository.save(PostVote.builder()
-                    .user(user).post(post).time(time).value((byte)-1).build());
+                    .user(user).post(post).time(time).value(usersPostVote).build());
 
             return ResponseEntity.ok(ApiResponseBody.builder().result(true).build());
         }

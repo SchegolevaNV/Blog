@@ -17,8 +17,7 @@ public interface PostService
     ResponseEntity<PostWallResponseBody> getPostsByTag(int offset, int limit, String tag);
     ResponseEntity<PostWallResponseBody> getPostsForModeration(int offset, int limit, String status);
     ResponseEntity<PostWallResponseBody> getMyPosts(int offset, int limit, String status);
-    ResponseEntity<ApiResponseBody> postLike(int id);
-    ResponseEntity<ApiResponseBody> postDislike (int id);
+    ResponseEntity<ApiResponseBody> postLikeOrDislike(int id, byte usersPostVote);
     ResponseEntity<ApiResponseBody> addPost (long timestamp, byte active, String title, List<String> tags, String text);
     ResponseEntity<ApiResponseBody> editPost (int id, long timestamp, byte active,
                                               String title, List<String> tags, String text);

@@ -100,7 +100,7 @@ public class UtilitiesServiceImpl implements UtilitiesService {
     }
 
     public boolean isPasswordNotShort(String password) {
-        return password.length() > minPasswordLength;
+        return password.length() >= minPasswordLength;
     }
 
     public String encodePassword(String password)
