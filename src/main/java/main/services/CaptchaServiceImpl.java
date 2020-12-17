@@ -27,25 +27,25 @@ import java.util.List;
 public class CaptchaServiceImpl implements CaptchaService {
 
     @Value("${captcha.width}")
-    int width;
+    private int width;
 
     @Value("${captcha.height}")
-    int height;
+    private int height;
 
     @Value("${captcha.prefix}")
-    String captchaPrefix;
+    private String captchaPrefix;
 
     @Value("${captcha.format}")
-    String captchaFormat;
+    private String captchaFormat;
 
     @Value("${captcha.lifetime: 1}")
-    long captchaLifetime;
+    private long captchaLifetime;
 
     @Value("${captcha.code.length}")
-    int captchaCodeLength;
+    private int captchaCodeLength;
 
     @Value("${captcha.secret.code.length}")
-    int captchaSecretCodeLength;
+    private int captchaSecretCodeLength;
 
     private final CaptchaCodeRepository captchaCodeRepository;
     private final UtilitiesService utilitiesService;

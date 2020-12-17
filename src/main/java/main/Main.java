@@ -28,6 +28,7 @@ public class Main {
         SpringApplication.run(Main.class, args);
         System.out.println("I'm ready");
     }
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

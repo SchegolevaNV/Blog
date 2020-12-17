@@ -52,9 +52,6 @@ public class PostServiceImpl implements PostService
     @Value("${post.text.min.length}")
     private int postTextMinLength;
 
-    private List<Post> posts;
-    private int count;
-
     @Override
     public ResponseEntity<PostWallResponseBody> getAllPosts (int offset, int limit, String mode) {
 
@@ -62,8 +59,8 @@ public class PostServiceImpl implements PostService
         ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
 
-        posts = getAndSortPosts(offset, limit, mode);
-        count = postRepository.getPostsCountByActiveAndModStatusAndTime(isActive, moderationStatus, time);
+        List<Post> posts = getAndSortPosts(offset, limit, mode);
+        int count = postRepository.getPostsCountByActiveAndModStatusAndTime(isActive, moderationStatus, time);
         return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
     }
 
@@ -75,8 +72,8 @@ public class PostServiceImpl implements PostService
         LocalDateTime time = utilitiesService.getTime();
 
         Pageable pageable = setPageable(offset, limit);
-        posts = postRepository.findPostByQuery(isActive, moderationStatus, time, query, pageable);
-        count = postRepository.getTotalPostCountByQuery(isActive, moderationStatus, time, query);
+        List<Post> posts = postRepository.findPostByQuery(isActive, moderationStatus, time, query, pageable);
+        int count = postRepository.getTotalPostCountByQuery(isActive, moderationStatus, time, query);
         return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
     }
 
@@ -88,8 +85,8 @@ public class PostServiceImpl implements PostService
         LocalDateTime time = utilitiesService.getTime();
 
         Pageable pageable = setPageable(offset, limit);
-        posts = postRepository.findPostByDate(isActive, moderationStatus, time, date, pageable);
-        count = postRepository.getTotalPostCountByDate(isActive, moderationStatus, time, date);
+        List<Post> posts = postRepository.findPostByDate(isActive, moderationStatus, time, date, pageable);
+        int count = postRepository.getTotalPostCountByDate(isActive, moderationStatus, time, date);
         return ResponseEntity.ok(new PostWallResponseBody(count, getListPostBodies(posts)));
     }
 
@@ -98,6 +95,8 @@ public class PostServiceImpl implements PostService
         byte isActive = utilitiesService.getIsActive();
         ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
+        List<Post> posts;
+        int count;
 
         Tag myTag = tagRepository.findByName(tag);
         if (myTag == null) {
@@ -164,6 +163,8 @@ public class PostServiceImpl implements PostService
                 ModerationStatus modStatus = ModerationStatus.valueOf(status.toUpperCase());
                 Pageable pageable = setPageable(offset, limit);
                 byte isActive = utilitiesService.getIsActive();
+                List<Post> posts;
+                int count;
 
                 if (modStatus.toString().equals("NEW")) {
                     posts = postRepository.findByModerationStatusAndIsActive(modStatus, isActive, pageable);
@@ -186,6 +187,9 @@ public class PostServiceImpl implements PostService
             byte isActive = utilitiesService.getIsActive();
             User user = authService.getAuthorizedUser();
             Pageable pageable = setPageable(offset, limit);
+            List<Post> posts;
+            int count;
+
             if (status.equals("inactive")) {
                 posts = postRepository.findByIsActiveAndUser((byte) 0, user, pageable);
                 count = postRepository.getTotalInactivePostsByUser(user);
@@ -320,6 +324,7 @@ public class PostServiceImpl implements PostService
         byte isActive = utilitiesService.getIsActive();
         ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
         LocalDateTime time = utilitiesService.getTime();
+        List<Post> posts;
 
         if (mode.equals(ModeValue.popular.toString())) {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("commentsCount").descending());
@@ -329,13 +334,10 @@ public class PostServiceImpl implements PostService
             Pageable pageable = PageRequest.of(page, limit);
             posts = postRepository.findAllPostSortedByLikes(isActive, moderationStatus, time, pageable);
         }
-        else if (mode.equals(ModeValue.recent.toString())) {
-            Pageable pageable = PageRequest.of(page, limit, Sort.by("time").descending());
-            posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(isActive, moderationStatus,
-                    time, pageable);
-        }
         else {
             Pageable pageable = PageRequest.of(page, limit, Sort.by("time"));
+            if (mode.equals(ModeValue.recent.toString()))
+                pageable = PageRequest.of(page, limit, Sort.by("time").descending());
             posts = postRepository.findPostByIsActiveAndModerationStatusAndTimeBefore(isActive, moderationStatus,
                     time, pageable);
         }
