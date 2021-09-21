@@ -1,6 +1,6 @@
 spring.datasource.url: jdbc:${DATABASE_URL:postgresql://localhost:5432/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
-spring.datasource.username: postgres
-spring.datasource.password: pass
+spring.datasource.username:
+spring.datasource.password:
 spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQL9Dialect
 server.port: ${PORT:8080}
@@ -14,7 +14,7 @@ storage.location: ./upload
 spring.mail.host: smtp.mail.ru
 spring.mail.port: 587
 spring.mail.username: myblogtest@mail.ru
-spring.mail.password: Badwolf1963
+spring.mail.password: 
 spring.mail.properties.mail.transport.protocol: smtp
 spring.mail.properties.mail.smtp.auth: true
 spring.mail.properties.mail.smtp.starttls.enable: true
