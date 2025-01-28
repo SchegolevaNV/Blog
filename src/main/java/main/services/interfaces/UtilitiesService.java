@@ -13,8 +13,8 @@ public interface UtilitiesService {
     LocalDateTime convertLocalTimeToUtc(LocalDateTime localDateTime);
     BufferedImage imageResizer(BufferedImage image);
     boolean isEmailCorrect(String email);
-    boolean isNameCorrect(String name);
-    boolean isPasswordNotShort(String password);
+    boolean isNameIncorrect(String name);
+    boolean isPasswordShort(String password);
     String encodePassword(String password);
     boolean isUserTypeCorrectPassword(String typedPassword, String passwordInDatabase);
     ApiResponseBody getErrorResponse(ErrorsBody errors);

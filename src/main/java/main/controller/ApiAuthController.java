@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 @RestController
@@ -23,8 +23,8 @@ public class ApiAuthController {
    private final CaptchaService captchaService;
 
     @PostMapping("login")
-    public ResponseEntity<AuthResponseBody> login(@RequestBody AuthRequestBody user) {
-        return authService.login(user.getEmail(), user.getPassword());
+    public ResponseEntity<AuthResponseBody> login(HttpServletRequest req, @RequestBody AuthRequestBody user) {
+        return authService.login(req, user.email(), user.password());
     }
 
     @GetMapping("check")
@@ -42,7 +42,7 @@ public class ApiAuthController {
 
     @PostMapping("restore")
     public ResponseEntity<AuthResponseBody> restorePassword(@RequestBody ApiRequestBody email, HttpServletRequest request) {
-        return authService.restorePassword(email.getEmail(), request);
+        return authService.restorePassword(email.email(), request);
     }
 
     @GetMapping("captcha")
@@ -54,20 +54,20 @@ public class ApiAuthController {
     public ResponseEntity<ApiResponseBody> changePassword(@RequestBody AuthRequestBody body)
     {
         return authService.changePassword(
-                body.getCode(),
-                body.getPassword(),
-                body.getCaptcha(),
-                body.getCaptchaSecret());
+                body.code(),
+                body.password(),
+                body.captcha(),
+                body.captchaSecret());
     }
 
     @PostMapping("register")
     public ResponseEntity<ApiResponseBody> signIn(@RequestBody AuthRequestBody body)
     {
         return authService.signIn(
-                body.getEmail(),
-                body.getPassword(),
-                body.getName(),
-                body.getCaptcha(),
-                body.getCaptchaSecret());
+                body.email(),
+                body.password(),
+                body.name(),
+                body.captcha(),
+                body.captchaSecret());
     }
 }

@@ -18,8 +18,8 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/")
 @RequiredArgsConstructor
-public class ApiGeneralController
-{
+public class ApiGeneralController {
+
     private final GeneralService generalService;
 
     @GetMapping("init")
@@ -80,7 +80,7 @@ public class ApiGeneralController
     @PreAuthorize("hasAuthority('user:moderator')")
     public ResponseEntity<ApiResponseBody> moderation(@RequestBody ApiRequestBody requestBody)
     {
-        return generalService.moderation(requestBody.getPostId(), requestBody.getDecision());
+        return generalService.moderation(requestBody.postId(), requestBody.decision());
     }
 
     @PostMapping(value = "image", consumes = "multipart/form-data")

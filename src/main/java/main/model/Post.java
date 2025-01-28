@@ -3,12 +3,13 @@ package main.model;
 import lombok.*;
 import main.model.enums.ModerationStatus;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,7 +37,7 @@ public class Post
     @ManyToOne(cascade = CascadeType.ALL)
     private User user;
 
-    @NonNull
+    @NotNull
     private LocalDateTime time;
 
     @NotNull

@@ -22,7 +22,7 @@ databaseChangeLog:
                   value: "daniil@mail.ru"
               - column:
                   name: password
-                  value: "$2y$12$ZeTOfZwsneaUwvjV4adUX.K1WYqzDwQiqKb0bDYlr9Aeyrt5DxVIO"
+                  value: "$2a$12$H91VN5p6WmHTcYDhaJaucO.7eF/P8guqTEgyr2yfhKgxB/.CIrf76"
         - insert:
             tableName: users
             columns:
@@ -40,7 +40,7 @@ databaseChangeLog:
                   value: "michail@mail.ru"
               - column:
                   name: password
-                  value: "$2y$12$wHXEvIlgJaupzzqElywNteajCaD87YF4pjSnlfWP82KKgUseEDTa."
+                  value: "$2a$12$qGRDT5eLpbmSyAdMa8.z9.fyVyaI7gs660Nea5c2hE0AUS0YLNs.."
 
 #добавление постов
         - insert:

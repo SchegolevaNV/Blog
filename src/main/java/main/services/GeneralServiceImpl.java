@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -205,7 +205,7 @@ public class GeneralServiceImpl implements GeneralService {
         if (!authService.isUserAuthorize())
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        Post post = postRepository.findById(comment.getPostId());
+        Post post = postRepository.findById(comment.postId());
         User user = authService.getAuthorizedUser();
 
         if (post == null)
@@ -213,25 +213,25 @@ public class GeneralServiceImpl implements GeneralService {
                             .text(Errors.POST_FOR_COMMENT_IS_NOT_EXIST.getTitle())
                             .build()));
 
-        if (comment.getParentId() != null) {
-            int parentId = comment.getParentId();
+        if (comment.parentId() != null) {
+            int parentId = comment.parentId();
             PostComment postComment = postCommentRepository.findById(parentId);
             if (postComment == null)
                 return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                                 .text(Errors.COMMENT_FOR_ANSWER_IS_NOT_EXIST.getTitle())
                                 .build()));
         }
-        if (comment.getText().length() < commentMinLength) {
+        if (comment.text().length() < commentMinLength) {
             return ResponseEntity.ok(utilitiesService.getErrorResponse(ErrorsBody.builder()
                     .text(Errors.COMMENT_IS_EMPTY_OR_SHORT.getTitle())
                     .build()));
         }
         PostComment postComment = postCommentRepository.save(PostComment.builder()
-                .parentId(comment.getParentId())
+                .parentId(comment.parentId())
                 .post(post)
                 .user(user)
                 .time(utilitiesService.getTime())
-                .text(comment.getText())
+                .text(comment.text())
                 .build());
         return ResponseEntity.ok(ApiResponseBody.builder().id(postComment.getId()).result(true).build());
     }
@@ -316,7 +316,7 @@ public class GeneralServiceImpl implements GeneralService {
             String photo = outputFile.getPath().substring(1);
             user.setPhoto(photo);
         }
-        if (!utilitiesService.isNameCorrect(name))
+        if (utilitiesService.isNameIncorrect(name))
             return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                     .name(Errors.NAME_IS_INCORRECT.getTitle())
                     .build()));
@@ -328,7 +328,7 @@ public class GeneralServiceImpl implements GeneralService {
                     .build()));
 
         if (password != null) {
-            if (!utilitiesService.isPasswordNotShort(password))
+            if (utilitiesService.isPasswordShort(password))
                 return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                         .password(Errors.PASSWORD_IS_SHORT.getTitle())
                         .build()));
@@ -343,25 +343,25 @@ public class GeneralServiceImpl implements GeneralService {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 
         User user = authService.getAuthorizedUser();
-        String name = apiRequestBody.getName();
-        String email = apiRequestBody.getEmail();
-        String password = apiRequestBody.getPassword();
-        Integer removePhoto = apiRequestBody.getRemovePhoto();
-        String photo = apiRequestBody.getPhoto();
+        String name = apiRequestBody.name();
+        String email = apiRequestBody.email();
+        String password = apiRequestBody.password();
+        Integer removePhoto = apiRequestBody.removePhoto();
+        String photo = apiRequestBody.photo();
 
         if (!email.equals(user.getEmail()))
             return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                     .email(Errors.EMAIL_IS_INCORRECT.getTitle())
                     .build()));
 
-        if (!utilitiesService.isNameCorrect(name))
+        if (utilitiesService.isNameIncorrect(name))
             return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                     .name(Errors.NAME_IS_INCORRECT.getTitle())
                     .build()));
         else user.setName(name);
 
         if (password != null) {
-            if (!utilitiesService.isPasswordNotShort(password))
+            if (utilitiesService.isPasswordShort(password))
                 return ResponseEntity.badRequest().body(utilitiesService.getErrorResponse(ErrorsBody.builder()
                         .password(Errors.PASSWORD_IS_SHORT.getTitle())
                         .build()));

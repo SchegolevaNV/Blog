@@ -15,8 +15,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/post")
 @RequiredArgsConstructor
-public class ApiPostController
-{
+public class ApiPostController {
     private final PostService postService;
 
     @GetMapping("")
@@ -80,7 +79,7 @@ public class ApiPostController
     public ResponseEntity<ApiResponseBody> setLike(@RequestBody ApiRequestBody body)
     {
         byte postVote = 1;
-        return postService.postLikeOrDislike(body.getPostId(), postVote);
+        return postService.postLikeOrDislike(body.postId(), postVote);
     }
 
     @PostMapping("dislike")
@@ -88,22 +87,22 @@ public class ApiPostController
     public ResponseEntity<ApiResponseBody> setDisLike(@RequestBody ApiRequestBody body)
     {
         byte postVote = -1;
-        return postService.postLikeOrDislike(body.getPostId(), postVote);
+        return postService.postLikeOrDislike(body.postId(), postVote);
     }
 
     @PostMapping("")
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<ApiResponseBody> addPost(@RequestBody ApiRequestBody post)
     {
-        return postService.addPost(post.getTimestamp(), post.getActive(), post.getTitle(),
-                post.getTags(), post.getText());
+        return postService.addPost(post.timestamp(), post.active(), post.title(),
+                post.tags(), post.text());
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<ApiResponseBody> editPost(@PathVariable("id") int id, @RequestBody ApiRequestBody post)
     {
-        return postService.editPost(id, post.getTimestamp(), post.getActive(), post.getTitle(),
-            post.getTags(), post.getText());
+        return postService.editPost(id, post.timestamp(), post.active(), post.title(),
+            post.tags(), post.text());
     }
 }

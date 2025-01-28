@@ -1,4 +1,5 @@
 package main.services;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import main.api.responses.ApiResponseBody;
@@ -19,14 +20,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.Base64;
 import java.util.Optional;
+
+import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
 
 @Service
 @Slf4j
@@ -51,7 +55,7 @@ public class AuthServiceImpl implements AuthService
     private int hashLength;
 
     @Override
-    public ResponseEntity<AuthResponseBody> login (String email, String password) {
+    public ResponseEntity<AuthResponseBody> login (HttpServletRequest req, String email, String password) {
         main.model.User user = userRepository.findByEmail(email);
         if (user == null || !utilitiesService.isUserTypeCorrectPassword(password, user.getPassword())) {
             log.info("User - {} not find or password - {} is wrong", email, password);
@@ -59,7 +63,10 @@ public class AuthServiceImpl implements AuthService
         }
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        SecurityContext sc = SecurityContextHolder.getContext();
+        sc.setAuthentication(auth);
+        HttpSession session = req.getSession(true);
+        session.setAttribute(SPRING_SECURITY_CONTEXT_KEY, sc);
         log.info("User {} was successfully logged", email);
 
         return ResponseEntity.ok(AuthResponseBody.builder()
@@ -120,7 +127,7 @@ public class AuthServiceImpl implements AuthService
             return ResponseEntity.ok(getIncorrectCaptchaErrorResponse());
         }
 
-        if (!utilitiesService.isPasswordNotShort(password)) {
+        if (utilitiesService.isPasswordShort(password)) {
             return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
         }
         user.setPassword(utilitiesService.encodePassword(password));
@@ -146,10 +153,10 @@ public class AuthServiceImpl implements AuthService
         if (!utilitiesService.isEmailCorrect(email))
             return ResponseEntity.ok(utilitiesService.getIncorrectEmailErrorResponse());
 
-        if (!utilitiesService.isPasswordNotShort(password))
+        if (utilitiesService.isPasswordShort(password))
             return ResponseEntity.ok(utilitiesService.getShortPasswordErrorResponse());
 
-        if (!utilitiesService.isNameCorrect(name))
+        if (utilitiesService.isNameIncorrect(name))
             return ResponseEntity.ok(utilitiesService.getIncorrectNameErrorResponse());
 
         CaptchaCode captchaCode = captchaCodeRepository.findByCode(encodeCaptcha(captcha));

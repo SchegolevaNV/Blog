@@ -1,11 +1,12 @@
 package main.model;
 
-import lombok.Data;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "global_settings")
 public class GlobalSettings

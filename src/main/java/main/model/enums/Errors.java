@@ -1,5 +1,8 @@
 package main.model.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Errors
 {
     TITLE_IS_NOT_SET_OR_SHORT("Заголовок не установлен или слишком короткий, введите минимум 3 символа"),
@@ -20,13 +23,9 @@ public enum Errors
     YOU_WRONG("Вы не можете оценивать свой собственный пост"),
     IMAGE_INVALID_NAME("Название файла должно содержать только латинские буквы, цифры и знаки подчёркивания");
 
-    private String title;
+    private final String title;
 
     Errors(String title) {
         this.title = title;
-    }
-
-    public String getTitle() {
-        return title;
     }
 }

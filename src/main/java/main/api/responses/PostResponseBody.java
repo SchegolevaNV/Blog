@@ -2,17 +2,19 @@ package main.api.responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import main.api.responses.bodies.CommentBody;
 import main.api.responses.bodies.UserBody;
 
 import java.util.List;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Data
 @Builder
-public class PostResponseBody
-{
+@Setter
+@Getter
+public class PostResponseBody {
     private int id;
     private Boolean active;
     private Long timestamp;

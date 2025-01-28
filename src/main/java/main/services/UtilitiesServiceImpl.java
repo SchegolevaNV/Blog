@@ -95,12 +95,12 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return email.matches("[aA-zZ0-9_\\-.]+@[a-z0-9]+\\.[a-z]+");
     }
 
-    public boolean isNameCorrect(String name) {
-        return name.length() < nameMaxLength || name.matches("[aA-zZаА-яЯ0-9_\\- ]+");
+    public boolean isNameIncorrect(String name) {
+        return name.length() >= nameMaxLength && !name.matches("[aA-zZаА-яЯ0-9_\\- ]+");
     }
 
-    public boolean isPasswordNotShort(String password) {
-        return password.length() >= minPasswordLength;
+    public boolean isPasswordShort(String password) {
+        return password.length() < minPasswordLength;
     }
 
     public String encodePassword(String password)
@@ -112,16 +112,8 @@ public class UtilitiesServiceImpl implements UtilitiesService {
         return bcryptEncoder.matches(typedPassword, passwordInDatabase);
     }
 
-    public byte getIsActive() {
-        return isActive;
-    }
-
     public LocalDateTime getTime() {
         return LocalDateTime.now(ZoneId.of("UTC"));
-    }
-
-    public String getModerationStatus() {
-        return moderationStatus;
     }
 
     public ApiResponseBody getErrorResponse(ErrorsBody errors) {

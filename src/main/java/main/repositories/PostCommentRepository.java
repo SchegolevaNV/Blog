@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostCommentRepository extends JpaRepository<PostComment, Integer> {
 
-    PostComment findById(int id);
+    PostComment findById(final int id);
 }

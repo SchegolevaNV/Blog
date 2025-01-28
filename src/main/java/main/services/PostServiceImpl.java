@@ -21,7 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -53,7 +53,7 @@ public class PostServiceImpl implements PostService
     private int postTextMinLength;
 
     @Override
-    public ResponseEntity<PostWallResponseBody> getAllPosts (int offset, int limit, String mode) {
+    public ResponseEntity<PostWallResponseBody> getAllPosts (final int offset, final int limit, final String mode) {
 
         byte isActive = utilitiesService.getIsActive();
         ModerationStatus moderationStatus = ModerationStatus.valueOf(utilitiesService.getModerationStatus());
@@ -112,8 +112,7 @@ public class PostServiceImpl implements PostService
     }
 
     @Override
-    public ResponseEntity<PostResponseBody> getPostById(int id, Principal principal)
-    {
+    public ResponseEntity<PostResponseBody> getPostById(int id, Principal principal) {
         User user = principal != null ? authService.getAuthorizedUser() : null;
         Post post = postRepository.findById(id);
         if (post == null)

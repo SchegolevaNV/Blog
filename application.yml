@@ -1,8 +1,11 @@
-spring.datasource.url: jdbc:${DATABASE_URL:postgresql://localhost:5432/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
-spring.datasource.username:
-spring.datasource.password:
-spring.jpa.hibernate.ddl-auto: validate
-spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQL9Dialect
+spring:
+  datasource:
+    url: jdbc:${DATABASE_URL:postgresql://localhost:5433/blog?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC}
+    username:
+    password:
+    driver-class-name: org.postgresql.Driver
+  jpa.hibernate.ddl-auto: validate
+  jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 server.port: ${PORT:8080}
 
 #Multipart file properties

@@ -15,7 +15,7 @@ public class DefaultController {
 
     @RequestMapping(method =
             {RequestMethod.OPTIONS, RequestMethod.GET},
-            value = "/**/{path:[^\\.]*}")
+            value = "/*/*/{path:[^\\.]*}")
     public String redirectToIndex() {
         return "forward:/";
     }

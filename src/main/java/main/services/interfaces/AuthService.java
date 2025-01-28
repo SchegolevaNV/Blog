@@ -8,12 +8,12 @@ import main.repositories.PostRepository;
 import main.api.responses.bodies.UserBody;
 import org.springframework.http.ResponseEntity;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 public interface AuthService
 {
-    ResponseEntity<AuthResponseBody> login(String email, String password);
+    ResponseEntity<AuthResponseBody> login(HttpServletRequest req, String email, String password);
     ResponseEntity<AuthResponseBody> checkAuth(Principal principal);
     ResponseEntity<AuthResponseBody> logout();
     ResponseEntity<AuthResponseBody> restorePassword(String email, HttpServletRequest request);
